@@ -5,26 +5,27 @@ import (
 	"reflect"
 )
 
-type Repository interface {
-	Init() interface{}
-	Add(value interface{}) interface{}
-	Delete(id string) error
-	Get(id string) error
-}
+var ErrItemNotFound = errors.New("repository: item not found")
+var ErrItemNotStruct = errors.New("repository: value type is not 'Struct'")
+var ErrItemWithoutId = errors.New("repository: value doesn't have property 'Id'")
 
-type RepositoryBase struct {
+type Repository struct {
 	items []interface{}
 }
 
-func (r RepositoryBase) Init() *RepositoryBase {
-	return &RepositoryBase{items: make([]interface{}, 0)}
+func NewRepository() *Repository {
+	return &Repository{items: make([]interface{}, 0)}
 }
 
-func (r *RepositoryBase) Add(value *interface{}) {
-	r.items = append(r.items, *value)
+func (r *Repository) Add(value interface{}) error {
+	if err := r.IsValid(value); err != nil {
+		return err
+	}
+	r.items = append(r.items, value)
+	return nil
 }
 
-func (r *RepositoryBase) Get(id string) (interface{}, error) {
+func (r *Repository) Get(id string) (interface{}, error) {
 	i, err := r.getIndex(id)
 	if err != nil {
 		return nil, err
@@ -32,7 +33,7 @@ func (r *RepositoryBase) Get(id string) (interface{}, error) {
 	return r.items[i], nil
 }
 
-func (r *RepositoryBase) Delete(id string) error {
+func (r *Repository) Delete(id string) error {
 	i, err := r.getIndex(id)
 	if err != nil {
 		return err
@@ -44,19 +45,26 @@ func (r *RepositoryBase) Delete(id string) error {
 	return nil
 }
 
-func (r *RepositoryBase) getIndex(id string) (int, error) {
-	for i, item := range r.items {
-		s := reflect.ValueOf(&item).Elem()
-		if s.Kind() == reflect.Struct {
-			if f := s.FieldByName("Id"); f.IsValid() {
-				if f.String() == id {
-					return i, nil
-				}
-				continue
-			}
-			return -1, errors.New("item doesn't have property 'Id'")
-		}
-		return -1, errors.New("item type is not 'Struct'")
+// We want to prevent a panic error with getIndex trying to get property 'Id'
+func (r *Repository) IsValid(item interface{}) error {
+	s := reflect.ValueOf(&item).Elem().Elem()
+	if s.Kind() != reflect.Struct {
+		return ErrItemNotStruct
 	}
-	return -1, errors.New("item not found")
+	if f := s.FieldByName("Id"); !f.IsValid() {
+		return ErrItemWithoutId
+	}
+	return nil
+}
+
+func (r *Repository) getIndex(id string) (int, error) {
+	for i, item := range r.items {
+		if err := r.IsValid(item); err == nil {
+			itemId := reflect.ValueOf(&item).Elem().Elem().FieldByName("Id").String()
+			if itemId == id {
+				return i, nil
+			}
+		}
+	}
+	return -1, ErrItemNotFound
 }
