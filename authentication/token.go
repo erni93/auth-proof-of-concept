@@ -2,7 +2,7 @@ package authentication
 
 import "time"
 
-type Token struct {
+type TokenData struct {
 	UserId       string
 	IssuedAtTime time.Time
 }

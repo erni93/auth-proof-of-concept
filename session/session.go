@@ -1,4 +1,4 @@
-package authentication
+package session
 
 import (
 	"authGo/authentication"
@@ -7,12 +7,13 @@ import (
 )
 
 var ErrSessionAlreadyExists = errors.New("session handler: session already exists")
-var ErrRefreshTokenNotFound = errors.New("session handler: refreshToken not found")
+var ErrUserTokenNotFound = errors.New("session handler: user token not found")
+var ErrRenewUserTokenDifferent = errors.New("session handler: new user token has a different user id")
 
 type Session struct {
-	RefreshToken authentication.Token
-	DeviceData   DeviceData
-	Created      time.Time
+	UserToken  authentication.TokenData
+	DeviceData DeviceData
+	Created    time.Time
 }
 
 type SessionsHandler struct {
@@ -23,26 +24,36 @@ func NewSessionHandler() *SessionsHandler {
 	return &SessionsHandler{sessions: make([]*Session, 0)}
 }
 
-func (s *SessionsHandler) Add(session *Session) error {
-	if s.ExistToken(session.RefreshToken) {
+func (s *SessionsHandler) getSession(userToken authentication.TokenData) *Session {
+	for _, session := range s.sessions {
+		if userToken.UserId == session.UserToken.UserId && userToken.IssuedAtTime.Equal(session.UserToken.IssuedAtTime) {
+			return session
+		}
+	}
+	return nil
+}
+
+func (s *SessionsHandler) GetUserSessions(userId string) []*Session {
+	sessions := make([]*Session, 0)
+	for _, session := range s.sessions {
+		if session.UserToken.UserId == userId {
+			sessions = append(sessions, session)
+		}
+	}
+	return sessions
+}
+
+func (s *SessionsHandler) AddSession(session *Session) error {
+	if s.getSession(session.UserToken) != nil {
 		return ErrSessionAlreadyExists
 	}
 	s.sessions = append(s.sessions, session)
 	return nil
 }
 
-func (s *SessionsHandler) ExistToken(refreshToken authentication.Token) bool {
-	for _, session := range s.sessions {
-		if refreshToken == session.RefreshToken {
-			return true
-		}
-	}
-	return false
-}
-
-func (s *SessionsHandler) DeleteSession(refreshToken authentication.Token) error {
+func (s *SessionsHandler) DeleteSession(userToken authentication.TokenData) error {
 	for i, v := range s.sessions {
-		if v.RefreshToken == refreshToken {
+		if v.UserToken == userToken {
 			lastIndex := len(s.sessions) - 1
 			s.sessions[i] = s.sessions[lastIndex]
 			s.sessions[lastIndex] = nil
@@ -50,5 +61,17 @@ func (s *SessionsHandler) DeleteSession(refreshToken authentication.Token) error
 			return nil
 		}
 	}
-	return ErrRefreshTokenNotFound
+	return ErrUserTokenNotFound
+}
+
+func (s *SessionsHandler) RenewUserToken(oldData authentication.TokenData, newData authentication.TokenData) error {
+	session := s.getSession(oldData)
+	if session == nil {
+		return ErrUserTokenNotFound
+	}
+	if session.UserToken.UserId != newData.UserId {
+		return ErrRenewUserTokenDifferent
+	}
+	session.UserToken = newData
+	return nil
 }

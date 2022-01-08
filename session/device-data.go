@@ -1,4 +1,4 @@
-package authentication
+package session
 
 type DeviceData struct {
 	IpAddress string
