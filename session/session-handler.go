@@ -5,9 +5,11 @@ import (
 	"errors"
 )
 
-var ErrSessionAlreadyExists = errors.New("session handler: session already exists")
-var ErrUserTokenNotFound = errors.New("session handler: user token not found")
-var ErrRenewUserTokenDifferent = errors.New("session handler: new user token has a different user id")
+var (
+	ErrSessionAlreadyExists    = errors.New("session handler: session already exists")
+	ErrUserTokenNotFound       = errors.New("session handler: user token not found")
+	ErrRenewUserTokenDifferent = errors.New("session handler: new user token has a different user id")
+)
 
 type SessionsHandler struct {
 	sessions []*Session
