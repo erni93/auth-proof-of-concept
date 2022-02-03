@@ -6,17 +6,23 @@ import (
 )
 
 var ErrUserNotFound = errors.New("user repository: user not found")
+var ErrUserAlreadyRegistered = errors.New("user repository: user already registered")
 
 type UserRepository struct {
 	users []*user.User
 }
 
-func New() *UserRepository {
+func NewUserRepository() *UserRepository {
 	return &UserRepository{users: make([]*user.User, 0)}
 }
 
-func (r *UserRepository) Add(user *user.User) {
+func (r *UserRepository) Add(user *user.User) error {
+	i, _ := r.getIndexByName(user.Name)
+	if i != -1 {
+		return ErrUserAlreadyRegistered
+	}
 	r.users = append(r.users, user)
+	return nil
 }
 
 func (r *UserRepository) GetById(id string) (*user.User, error) {
