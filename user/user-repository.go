@@ -1,22 +1,19 @@
 package user
 
-import (
-	"authGo/user"
-	"errors"
-)
+import "errors"
 
 var ErrUserNotFound = errors.New("user repository: user not found")
 var ErrUserAlreadyRegistered = errors.New("user repository: user already registered")
 
 type UserRepository struct {
-	users []*user.User
+	users []*User
 }
 
 func NewUserRepository() *UserRepository {
-	return &UserRepository{users: make([]*user.User, 0)}
+	return &UserRepository{users: make([]*User, 0)}
 }
 
-func (r *UserRepository) Add(user *user.User) error {
+func (r *UserRepository) Add(user *User) error {
 	i, _ := r.getIndexByName(user.Name)
 	if i != -1 {
 		return ErrUserAlreadyRegistered
@@ -25,7 +22,7 @@ func (r *UserRepository) Add(user *user.User) error {
 	return nil
 }
 
-func (r *UserRepository) GetById(id string) (*user.User, error) {
+func (r *UserRepository) GetById(id string) (*User, error) {
 	i, err := r.getIndexById(id)
 	if err != nil {
 		return nil, err
@@ -33,7 +30,7 @@ func (r *UserRepository) GetById(id string) (*user.User, error) {
 	return r.users[i], ErrUserNotFound
 }
 
-func (r *UserRepository) GetByName(name string) (*user.User, error) {
+func (r *UserRepository) GetByName(name string) (*User, error) {
 	i, err := r.getIndexByName(name)
 	if err != nil {
 		return nil, err
@@ -51,6 +48,10 @@ func (r *UserRepository) Delete(id string) error {
 	r.users[lastIndex] = nil
 	r.users = r.users[:lastIndex]
 	return nil
+}
+
+func (r *UserRepository) GetAll() []*User {
+	return r.users
 }
 
 func (r *UserRepository) getIndexById(id string) (int, error) {

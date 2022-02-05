@@ -1,20 +1,16 @@
 package user
 
 import (
-	"authGo/user"
-
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
-
-	repository "authGo/user/repository"
 )
 
 type UserService struct {
-	repository *repository.UserRepository
+	repository *UserRepository
 }
 
-func New() *UserService {
-	return &UserService{repository: repository.NewUserRepository()}
+func NewUserService() *UserService {
+	return &UserService{repository: NewUserRepository()}
 }
 
 func (s *UserService) CreateUser(name string, password string) error {
@@ -23,14 +19,14 @@ func (s *UserService) CreateUser(name string, password string) error {
 	if err != nil {
 		return err
 	}
-	err = s.repository.Add(&user.User{Id: id.String(), Name: name, Password: string(passwordByte)})
+	err = s.repository.Add(&User{Id: id.String(), Name: name, Password: string(passwordByte)})
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (s *UserService) isPasswordValid(name string, password string) bool {
+func (s *UserService) IsPasswordValid(name string, password string) bool {
 	user, err := s.repository.GetByName(name)
 	if err != nil {
 		return false
@@ -39,4 +35,12 @@ func (s *UserService) isPasswordValid(name string, password string) bool {
 		return false
 	}
 	return true
+}
+
+func (s *UserService) DeleteUser(id string) error {
+	return s.repository.Delete(id)
+}
+
+func (s *UserService) GetAllUsers() []*User {
+	return s.repository.GetAll()
 }
