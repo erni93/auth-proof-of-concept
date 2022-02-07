@@ -35,8 +35,7 @@ func createTestSessionHandler(t *testing.T) *SessionsHandler {
 
 func TestNewSessionHandler(t *testing.T) {
 	if sessionHandler := NewSessionHandler(); sessionHandler == nil {
-		test := *sessionHandler
-		t.Errorf("expected NewSessionHandler to return SessionsHandler, got %v", test)
+		t.Error("expected NewSessionHandler to return SessionsHandler, got nil")
 	}
 }
 
