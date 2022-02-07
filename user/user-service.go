@@ -6,24 +6,27 @@ import (
 )
 
 type UserService struct {
-	repository *UserRepository
+	repository        *UserRepository
+	passwordValidator PasswordValidator
+}
+
+type PasswordValidator interface {
+	compareHashAndPassword(hashedPassword, password []byte) error
+	generateFromPassword(password []byte, cost int) ([]byte, error)
+}
+
+type ServicePasswordValidator struct{}
+
+func (spv ServicePasswordValidator) compareHashAndPassword(hashedPassword, password []byte) error {
+	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
+}
+
+func (spv ServicePasswordValidator) generateFromPassword(password []byte, cost int) ([]byte, error) {
+	return bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 }
 
 func NewUserService() *UserService {
-	return &UserService{repository: NewUserRepository()}
-}
-
-func (s *UserService) CreateUser(name string, password string) error {
-	id := uuid.New()
-	passwordByte, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		return err
-	}
-	err = s.repository.Add(&User{Id: id.String(), Name: name, Password: string(passwordByte)})
-	if err != nil {
-		return err
-	}
-	return nil
+	return &UserService{repository: NewUserRepository(), passwordValidator: ServicePasswordValidator{}}
 }
 
 func (s *UserService) IsPasswordValid(name string, password string) bool {
@@ -31,10 +34,23 @@ func (s *UserService) IsPasswordValid(name string, password string) bool {
 	if err != nil {
 		return false
 	}
-	if err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
+	if err = s.passwordValidator.compareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
 		return false
 	}
 	return true
+}
+
+func (s *UserService) CreateUser(name string, password string) error {
+	id := uuid.New()
+	passwordHash, err := s.getPasswordHash(password)
+	if err != nil {
+		return err
+	}
+	err = s.repository.Add(&User{Id: id.String(), Name: name, Password: passwordHash})
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *UserService) DeleteUser(id string) error {
@@ -43,4 +59,12 @@ func (s *UserService) DeleteUser(id string) error {
 
 func (s *UserService) GetAllUsers() []*User {
 	return s.repository.GetAll()
+}
+
+func (s *UserService) getPasswordHash(password string) (string, error) {
+	passwordBytes, err := s.passwordValidator.generateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+	return string(passwordBytes), nil
 }
