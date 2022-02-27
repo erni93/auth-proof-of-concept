@@ -27,7 +27,7 @@ func (r *UserRepository) GetById(id string) (*User, error) {
 	if err != nil {
 		return nil, err
 	}
-	return r.users[i], ErrUserNotFound
+	return r.users[i], nil
 }
 
 func (r *UserRepository) GetByName(name string) (*User, error) {

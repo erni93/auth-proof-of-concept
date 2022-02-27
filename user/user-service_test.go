@@ -2,6 +2,7 @@ package user
 
 import (
 	"errors"
+	"reflect"
 	"testing"
 )
 
@@ -92,5 +93,42 @@ func TestIsPasswordValid(t *testing.T) {
 		if got != loginTest.want {
 			t.Errorf("login %s password %s, got %t want %t", loginTest.login.Name, loginTest.login.Password, got, loginTest.want)
 		}
+	}
+}
+
+func TestDeleteUser(t *testing.T) {
+	s, err := createTestUserService()
+	if err != nil {
+		t.Errorf("error creating UserService, %s", err)
+	}
+
+	id := s.repository.users[0].Id
+	err = s.DeleteUser(id)
+	if err != nil {
+		t.Error("expected err to be nil")
+	}
+	usersLength := len(s.repository.users)
+	if usersLength != 2 {
+		t.Errorf("expected usersLength to be 2, got %d", usersLength)
+	}
+	err = s.DeleteUser("123")
+	if err == nil {
+		t.Error("expected err to not be nil")
+	}
+	usersLength = len(s.repository.users)
+	if usersLength != 2 {
+		t.Errorf("expected usersLength to be 2, got %d", usersLength)
+	}
+}
+
+func TestGetAllUsers(t *testing.T) {
+	s, err := createTestUserService()
+	if err != nil {
+		t.Errorf("error creating UserService, %s", err)
+	}
+
+	users := s.GetAllUsers()
+	if !reflect.DeepEqual(users, s.repository.users) {
+		t.Error("expected users to be the same as repository.users")
 	}
 }
