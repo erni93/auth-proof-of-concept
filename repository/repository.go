@@ -1,9 +1,5 @@
 package repository
 
-import "errors"
-
-var ErrItemNotFound = errors.New("repository: item not found")
-
 type ComparableFunc[T any] func(item *T, value string) bool
 
 type Repository[T any] struct {
@@ -14,13 +10,13 @@ func NewRepository[T any]() *Repository[T] {
 	return &Repository[T]{items: make([]*T, 0)}
 }
 
-func (r *Repository[T]) GetItem(comparable ComparableFunc[T], value string) (*T, int, error) {
+func (r *Repository[T]) GetItem(comparable ComparableFunc[T], value string) (*T, int) {
 	for i, item := range r.items {
 		if comparable(item, value) {
-			return item, i, nil
+			return item, i
 		}
 	}
-	return nil, -1, ErrItemNotFound
+	return nil, -1
 }
 
 func (r *Repository[T]) GetAll() []*T {
@@ -34,5 +30,5 @@ func (r *Repository[T]) Add(item *T) {
 func (r *Repository[T]) Delete(index int) {
 	lastIndex := len(r.items) - 1
 	r.items[index] = r.items[lastIndex]
-	r.items = r.items[:lastIndex-1]
+	r.items = r.items[:lastIndex]
 }

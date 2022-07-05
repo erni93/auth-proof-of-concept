@@ -26,7 +26,7 @@ func TestAdd(t *testing.T) {
 	if err != nil {
 		t.Error("expected err to be nil")
 	}
-	registeredUser := r.users[0]
+	registeredUser := r.GetAll()[0]
 	err = r.Add(registeredUser)
 	if err != ErrUserAlreadyRegistered {
 		t.Errorf("expected error to be ErrUserAlreadyRegistered, got: %s", err)
@@ -72,7 +72,7 @@ func TestDelete(t *testing.T) {
 	if err != nil {
 		t.Error("expected err to be nil")
 	}
-	usersLength := len(r.users)
+	usersLength := len(r.GetAll())
 	if usersLength != 2 {
 		t.Errorf("expected usersLength to be 2, got %d", usersLength)
 	}
@@ -87,7 +87,7 @@ func TestGetAll(t *testing.T) {
 	if err != nil {
 		t.Error("expected err to be nil")
 	}
-	if !reflect.DeepEqual(r.GetAll(), r.users) {
+	if !reflect.DeepEqual(r.GetAll(), r.GetAll()) {
 		t.Error("expected users to be the same as repository.users")
 	}
 }

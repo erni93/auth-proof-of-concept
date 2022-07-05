@@ -1,16 +1,27 @@
 package user
 
-import "errors"
+import (
+	"authGo/repository"
+	"errors"
+)
 
 var ErrUserNotFound = errors.New("user repository: user not found")
 var ErrUserAlreadyRegistered = errors.New("user repository: user already registered")
 
+func getById(user *User, value string) bool {
+	return user.Id == value
+}
+
+func getByName(user *User, value string) bool {
+	return user.Name == value
+}
+
 type UserRepository struct {
-	users []*User
+	repository *repository.Repository[User]
 }
 
 func NewUserRepository() *UserRepository {
-	return &UserRepository{users: make([]*User, 0)}
+	return &UserRepository{repository: repository.NewRepository[User]()}
 }
 
 func (r *UserRepository) Add(user *User) error {
@@ -18,24 +29,18 @@ func (r *UserRepository) Add(user *User) error {
 	if i != -1 {
 		return ErrUserAlreadyRegistered
 	}
-	r.users = append(r.users, user)
+	r.repository.Add(user)
 	return nil
 }
 
 func (r *UserRepository) GetById(id string) (*User, error) {
-	i, err := r.getIndexById(id)
-	if err != nil {
-		return nil, err
-	}
-	return r.users[i], nil
+	user, _, err := r.getUser(getById, id)
+	return user, err
 }
 
 func (r *UserRepository) GetByName(name string) (*User, error) {
-	i, err := r.getIndexByName(name)
-	if err != nil {
-		return nil, err
-	}
-	return r.users[i], nil
+	user, _, err := r.getUser(getByName, name)
+	return user, err
 }
 
 func (r *UserRepository) Delete(id string) error {
@@ -43,31 +48,28 @@ func (r *UserRepository) Delete(id string) error {
 	if err != nil {
 		return err
 	}
-	lastIndex := len(r.users) - 1
-	r.users[i] = r.users[lastIndex]
-	r.users[lastIndex] = nil
-	r.users = r.users[:lastIndex]
+	r.repository.Delete(i)
 	return nil
 }
 
 func (r *UserRepository) GetAll() []*User {
-	return r.users
+	return r.repository.GetAll()
+}
+
+func (r *UserRepository) getUser(comparableFunc repository.ComparableFunc[User], value string) (*User, int, error) {
+	user, i := r.repository.GetItem(comparableFunc, value)
+	if i == -1 {
+		return nil, i, ErrUserNotFound
+	}
+	return user, i, nil
 }
 
 func (r *UserRepository) getIndexById(id string) (int, error) {
-	for i, user := range r.users {
-		if user.Id == id {
-			return i, nil
-		}
-	}
-	return -1, ErrUserNotFound
+	_, i, err := r.getUser(getById, id)
+	return i, err
 }
 
 func (r *UserRepository) getIndexByName(name string) (int, error) {
-	for i, user := range r.users {
-		if user.Name == name {
-			return i, nil
-		}
-	}
-	return -1, ErrUserNotFound
+	_, i, err := r.getUser(getByName, name)
+	return i, err
 }

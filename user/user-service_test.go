@@ -102,12 +102,12 @@ func TestDeleteUser(t *testing.T) {
 		t.Errorf("error creating UserService, %s", err)
 	}
 
-	id := s.repository.users[0].Id
+	id := s.repository.GetAll()[0].Id
 	err = s.DeleteUser(id)
 	if err != nil {
 		t.Error("expected err to be nil")
 	}
-	usersLength := len(s.repository.users)
+	usersLength := len(s.repository.GetAll())
 	if usersLength != 2 {
 		t.Errorf("expected usersLength to be 2, got %d", usersLength)
 	}
@@ -115,7 +115,7 @@ func TestDeleteUser(t *testing.T) {
 	if err == nil {
 		t.Error("expected err to not be nil")
 	}
-	usersLength = len(s.repository.users)
+	usersLength = len(s.repository.GetAll())
 	if usersLength != 2 {
 		t.Errorf("expected usersLength to be 2, got %d", usersLength)
 	}
@@ -128,7 +128,7 @@ func TestGetAllUsers(t *testing.T) {
 	}
 
 	users := s.GetAllUsers()
-	if !reflect.DeepEqual(users, s.repository.users) {
+	if !reflect.DeepEqual(users, s.repository.GetAll()) {
 		t.Error("expected users to be the same as repository.users")
 	}
 }

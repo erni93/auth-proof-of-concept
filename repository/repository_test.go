@@ -1,6 +1,9 @@
 package repository
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 type TestItem struct {
 	Id   string
@@ -12,7 +15,7 @@ func createRepository() *Repository[TestItem] {
 	items := []*TestItem{
 		{Id: "1", Name: "test1"},
 		{Id: "2", Name: "test2"},
-		{Id: "3", Name: "test3"},
+		{Id: "3", Name: "super test3"},
 	}
 	for _, item := range items {
 		r.Add(item)
@@ -42,34 +45,55 @@ func TestGetAll(t *testing.T) {
 
 func TestGetItem(t *testing.T) {
 	r := createRepository()
-	item1, i, err := r.GetItem(getById, "1")
-	if item1.Name != "test1" {
-		t.Errorf("expected name to be test1, got %s", item1.Name)
-	}
-	if i != 0 {
-		t.Errorf("expected index to be 0, got %d", i)
-	}
-	if err == ErrItemNotFound {
-		t.Error("error not expected, got ErrItemNotFound")
-	}
-	_, _, err = r.GetItem(getById, "aaaaaa")
-	if err != ErrItemNotFound {
-		t.Error("expected error ErrItemNotFound, got nil")
-	}
+
+	t.Run("get different items at different positions", func(t *testing.T) {
+		items := []struct {
+			item  *TestItem
+			index int
+		}{
+			{r.items[0], 0},
+			{r.items[1], 1},
+			{r.items[2], 2},
+		}
+
+		for _, testItem := range items {
+			got, i := r.GetItem(getById, testItem.item.Id)
+			if i != testItem.index {
+				t.Errorf("expected %d to be %d", i, testItem.index)
+			}
+			if got != testItem.item {
+				t.Errorf("expected %v to be %v", got, testItem.item)
+			}
+		}
+	})
+
+	t.Run("item not found", func(t *testing.T) {
+		_, i := r.GetItem(getById, "aaaaaa")
+		if i != -1 {
+			t.Errorf("expected index to be -1, got %d", i)
+		}
+	})
+
+	t.Run("allow custom comparable functions", func(t *testing.T) {
+		nameContains := func(item *TestItem, value string) bool {
+			return strings.Contains(item.Name, value)
+		}
+		item, _ := r.GetItem(nameContains, "super")
+		if item == nil {
+			t.Error("expected item to not be nil")
+		}
+	})
 }
 
 func TestDeleteItem(t *testing.T) {
 	r := createRepository()
-	_, i, err := r.GetItem(getById, "1")
+	_, i := r.GetItem(getById, "1")
 	if i != 0 {
 		t.Errorf("expected index to be 0, got %d", i)
 	}
-	if err == ErrItemNotFound {
-		t.Error("error not expected, got ErrItemNotFound")
-	}
 	r.Delete(i)
-	_, _, err = r.GetItem(getById, "1")
-	if err != ErrItemNotFound {
-		t.Error("expected error ErrItemNotFound, got nil")
+	_, i = r.GetItem(getById, "1")
+	if i != -1 {
+		t.Errorf("expected index to be -1, got %d", i)
 	}
 }
