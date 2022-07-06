@@ -16,28 +16,28 @@ type TokenGenerator struct {
 	refreshTokenPassword []byte
 }
 
-func newTokenGenerator(accessTokenPassword string, refreshTokenPassword string) *TokenGenerator {
+func NewTokenGenerator(accessTokenPassword string, refreshTokenPassword string) *TokenGenerator {
 	return &TokenGenerator{accessTokenPassword: []byte(accessTokenPassword), refreshTokenPassword: []byte(refreshTokenPassword)}
 }
 
-func (t *TokenGenerator) CreateAccessToken(user *user.User) (string, error) {
+func (t *TokenGenerator) CreateAccessToken(user *user.User, issuedAtTime time.Time) (string, error) {
 	header, err := json.Marshal(DefaultHeader)
 	if err != nil {
 		return "", err
 	}
-	payload, err := json.Marshal(&AccessTokenPayload{UserId: user.Id, IssuedAtTime: time.Now(), IsAdmin: user.IsAdmin})
+	payload, err := json.Marshal(&AccessTokenPayload{UserId: user.Id, IssuedAtTime: issuedAtTime, IsAdmin: user.IsAdmin})
 	if err != nil {
 		return "", err
 	}
 	return t.createJWT(header, payload, t.accessTokenPassword), nil
 }
 
-func (t *TokenGenerator) CreateRefreshToken(user *user.User) (string, error) {
+func (t *TokenGenerator) CreateRefreshToken(user *user.User, issuedAtTime time.Time) (string, error) {
 	header, err := json.Marshal(DefaultHeader)
 	if err != nil {
 		return "", err
 	}
-	payload, err := json.Marshal(&RefreshTokenPayload{UserId: user.Id, IssuedAtTime: time.Now()})
+	payload, err := json.Marshal(&RefreshTokenPayload{UserId: user.Id, IssuedAtTime: issuedAtTime})
 	if err != nil {
 		return "", err
 	}
@@ -65,8 +65,8 @@ func (t *TokenGenerator) validateJWT(jwt string, password []byte) (bool, error) 
 }
 
 func (t *TokenGenerator) createJWT(header []byte, payload []byte, password []byte) string {
-	headerB64 := b64.URLEncoding.EncodeToString(header)
-	payloadB64 := b64.URLEncoding.EncodeToString(payload)
+	headerB64 := b64.RawURLEncoding.EncodeToString(header)
+	payloadB64 := b64.RawURLEncoding.EncodeToString(payload)
 	signatureB64 := t.createSignature(headerB64, payloadB64, password)
 	return fmt.Sprintf("%s.%s.%s", headerB64, payloadB64, signatureB64)
 }
@@ -75,5 +75,5 @@ func (t *TokenGenerator) createSignature(headerB64 string, payloadB64 string, pa
 	signature := fmt.Sprintf("%s.%s", headerB64, payloadB64)
 	h := hmac.New(sha256.New, password)
 	h.Write([]byte(signature))
-	return b64.URLEncoding.EncodeToString(h.Sum(nil))
+	return b64.RawURLEncoding.EncodeToString(h.Sum(nil))
 }

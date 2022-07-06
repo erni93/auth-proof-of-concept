@@ -3,16 +3,11 @@ package authentication
 import "time"
 
 type Header struct {
-	alg string
-	typ string
+	Alg string `json:"alg"`
+	Typ string `json:"typ"`
 }
 
-var DefaultHeader = &Header{alg: "HS256", typ: "JWT"}
-
-type AuthTokens struct {
-	AccessToken  string
-	RefreshToken string
-}
+var DefaultHeader = &Header{Alg: "HS256", Typ: "JWT"}
 
 type AccessTokenPayload struct {
 	UserId       string    `json:"userId"`
