@@ -6,7 +6,7 @@ import (
 )
 
 type Session struct {
-	UserToken  authentication.TokenData
+	UserToken  authentication.RefreshTokenPayload
 	DeviceData DeviceData
 	Created    time.Time
 }

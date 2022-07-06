@@ -87,7 +87,7 @@ func TestGetAll(t *testing.T) {
 	if err != nil {
 		t.Error("expected err to be nil")
 	}
-	if !reflect.DeepEqual(r.GetAll(), r.GetAll()) {
+	if !reflect.DeepEqual(r.GetAll(), r.repository.GetAll()) {
 		t.Error("expected users to be the same as repository.users")
 	}
 }

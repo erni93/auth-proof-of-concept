@@ -18,11 +18,11 @@ type PasswordValidator interface {
 type ServicePasswordValidator struct{}
 
 func (spv ServicePasswordValidator) compareHashAndPassword(hashedPassword, password []byte) error {
-	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
+	return bcrypt.CompareHashAndPassword(hashedPassword, password)
 }
 
 func (spv ServicePasswordValidator) generateFromPassword(password []byte, cost int) ([]byte, error) {
-	return bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	return bcrypt.GenerateFromPassword(password, bcrypt.DefaultCost)
 }
 
 func NewUserService() *UserService {
