@@ -19,3 +19,7 @@ type RefreshTokenPayload struct {
 	UserId       string    `json:"userId"`
 	IssuedAtTime time.Time `json:"issuedAtTime"`
 }
+
+type IssuedAtTime struct {
+	IssuedAtTime time.Time `json:"issuedAtTime"`
+}
