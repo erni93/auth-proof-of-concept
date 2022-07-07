@@ -9,6 +9,10 @@ type Header struct {
 
 var DefaultHeader = &Header{Alg: "HS256", Typ: "JWT"}
 
+type TokenPayload interface {
+	AccessTokenPayload | RefreshTokenPayload
+}
+
 type AccessTokenPayload struct {
 	UserId       string    `json:"userId"`
 	IssuedAtTime time.Time `json:"issuedAtTime"`
