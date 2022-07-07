@@ -53,12 +53,8 @@ func (s *UserService) CreateUser(name string, password string) error {
 	return nil
 }
 
-func (s *UserService) DeleteUser(id string) error {
-	return s.repository.Delete(id)
-}
-
-func (s *UserService) GetAllUsers() []*User {
-	return s.repository.GetAll()
+func (s *UserService) GetRepository() *UserRepository {
+	return s.repository
 }
 
 func (s *UserService) getPasswordHash(password string) (string, error) {

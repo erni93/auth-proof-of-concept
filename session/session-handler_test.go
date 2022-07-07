@@ -1,14 +1,14 @@
 package session
 
 import (
-	"authGo/authentication"
+	"authGo/token"
 	"testing"
 	"time"
 )
 
 func createTestSession(userId string) *Session {
 	return &Session{
-		UserToken: authentication.RefreshTokenPayload{
+		UserToken: token.RefreshTokenPayload{
 			UserId:       userId,
 			IssuedAtTime: time.Now(),
 		},
@@ -83,7 +83,7 @@ func TestDeleteSession(t *testing.T) {
 		t.Errorf("error deleting session, %s", err)
 	}
 
-	err = sessionHandler.DeleteSession(authentication.RefreshTokenPayload{UserId: "user3", IssuedAtTime: time.Now()})
+	err = sessionHandler.DeleteSession(token.RefreshTokenPayload{UserId: "user3", IssuedAtTime: time.Now()})
 	if err != ErrUserTokenNotFound {
 		t.Errorf("expected error to be ErrUserTokenNotFound, got: %s", err)
 	}
@@ -93,7 +93,7 @@ func TestRenewUserToken(t *testing.T) {
 	sessionHandler := createTestSessionHandler(t)
 	time.Sleep(1 * time.Millisecond)
 	oldData := sessionHandler.GetUserSessions("user1")[0].UserToken
-	newData := authentication.RefreshTokenPayload{UserId: "user1", IssuedAtTime: time.Now()}
+	newData := token.RefreshTokenPayload{UserId: "user1", IssuedAtTime: time.Now()}
 
 	err := sessionHandler.RenewUserToken(oldData, newData)
 	if err != nil {
@@ -104,13 +104,13 @@ func TestRenewUserToken(t *testing.T) {
 	}
 
 	time.Sleep(1 * time.Millisecond)
-	err = sessionHandler.RenewUserToken(newData, authentication.RefreshTokenPayload{UserId: "user3", IssuedAtTime: time.Now()})
+	err = sessionHandler.RenewUserToken(newData, token.RefreshTokenPayload{UserId: "user3", IssuedAtTime: time.Now()})
 	if err != ErrRenewUserTokenDifferent {
 		t.Errorf("expected error to be ErrRenewUserTokenDifferent, got: %s", err)
 	}
 
 	time.Sleep(1 * time.Millisecond)
-	err = sessionHandler.RenewUserToken(authentication.RefreshTokenPayload{UserId: "user3", IssuedAtTime: time.Now()}, newData)
+	err = sessionHandler.RenewUserToken(token.RefreshTokenPayload{UserId: "user3", IssuedAtTime: time.Now()}, newData)
 	if err != ErrUserTokenNotFound {
 		t.Errorf("expected error to be ErrUserTokenNotFound, got: %s", err)
 	}

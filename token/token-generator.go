@@ -1,4 +1,4 @@
-package authentication
+package token
 
 import (
 	"crypto/hmac"
@@ -18,8 +18,8 @@ var (
 )
 
 type TokenGenerator[T TokenPayload] struct {
-	password []byte
-	duration time.Duration
+	Password []byte
+	Duration time.Duration
 }
 
 func (t *TokenGenerator[T]) CreateToken(payload *T) (string, error) {
@@ -35,7 +35,7 @@ func (t *TokenGenerator[T]) CreateToken(payload *T) (string, error) {
 }
 
 func (t *TokenGenerator[T]) IsTokenValid(jwt string) (bool, error) {
-	expirationDate := time.Now().Add(-t.duration)
+	expirationDate := time.Now().Add(-t.Duration)
 	return t.validateJWT(jwt, expirationDate)
 }
 
@@ -48,7 +48,7 @@ func (t *TokenGenerator[T]) createJWT(header []byte, payload []byte) string {
 
 func (t *TokenGenerator[T]) createSignature(headerB64 string, payloadB64 string) string {
 	signature := fmt.Sprintf("%s.%s", headerB64, payloadB64)
-	h := hmac.New(sha256.New, t.password)
+	h := hmac.New(sha256.New, t.Password)
 	h.Write([]byte(signature))
 	return b64.RawURLEncoding.EncodeToString(h.Sum(nil))
 }

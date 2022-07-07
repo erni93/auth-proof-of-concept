@@ -1,7 +1,7 @@
 package session
 
 import (
-	"authGo/authentication"
+	"authGo/token"
 	"errors"
 )
 
@@ -19,7 +19,7 @@ func NewSessionHandler() *SessionsHandler {
 	return &SessionsHandler{sessions: make([]*Session, 0)}
 }
 
-func (s *SessionsHandler) getSession(userToken authentication.RefreshTokenPayload) *Session {
+func (s *SessionsHandler) getSession(userToken token.RefreshTokenPayload) *Session {
 	for _, session := range s.sessions {
 		if userToken.UserId == session.UserToken.UserId && userToken.IssuedAtTime.Equal(session.UserToken.IssuedAtTime) {
 			return session
@@ -46,7 +46,7 @@ func (s *SessionsHandler) AddSession(session *Session) error {
 	return nil
 }
 
-func (s *SessionsHandler) DeleteSession(userToken authentication.RefreshTokenPayload) error {
+func (s *SessionsHandler) DeleteSession(userToken token.RefreshTokenPayload) error {
 	for i, v := range s.sessions {
 		if v.UserToken == userToken {
 			lastIndex := len(s.sessions) - 1
@@ -59,7 +59,7 @@ func (s *SessionsHandler) DeleteSession(userToken authentication.RefreshTokenPay
 	return ErrUserTokenNotFound
 }
 
-func (s *SessionsHandler) RenewUserToken(oldData authentication.RefreshTokenPayload, newData authentication.RefreshTokenPayload) error {
+func (s *SessionsHandler) RenewUserToken(oldData token.RefreshTokenPayload, newData token.RefreshTokenPayload) error {
 	session := s.getSession(oldData)
 	if session == nil {
 		return ErrUserTokenNotFound

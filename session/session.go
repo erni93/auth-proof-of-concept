@@ -1,12 +1,12 @@
 package session
 
 import (
-	"authGo/authentication"
+	"authGo/token"
 	"time"
 )
 
 type Session struct {
-	UserToken  authentication.RefreshTokenPayload
+	UserToken  token.RefreshTokenPayload
 	DeviceData DeviceData
 	Created    time.Time
 }
