@@ -15,10 +15,12 @@ import (
 func main() {
 	port := ":8181"
 	loginRouter := &router.LoginRouter{
-		UserService:           user.NewUserService(),
-		SessionHandler:        session.NewSessionHandler(),
-		AccessTokenGenerator:  &token.TokenGenerator[token.AccessTokenPayload]{Password: []byte("accessKey"), Duration: time.Minute * 2},
-		RefreshTokenGenerator: &token.TokenGenerator[token.RefreshTokenPayload]{Password: []byte("refreshKey"), Duration: time.Hour * 24 * 365},
+		Services: &router.LoginRouterServices{
+			UserService:           user.NewUserService(),
+			AccessTokenGenerator:  &token.TokenGenerator[token.AccessTokenPayload]{Password: []byte("accessKey"), Duration: time.Minute * 2},
+			RefreshTokenGenerator: &token.TokenGenerator[token.RefreshTokenPayload]{Password: []byte("refreshKey"), Duration: time.Hour * 24 * 365},
+		},
+		SessionHandler: session.NewSessionHandler(),
 	}
 
 	router := mux.NewRouter()
