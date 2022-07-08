@@ -26,7 +26,7 @@ func (l *LoginRouter) Handler(w http.ResponseWriter, r *http.Request) {
 	loginDetails, err := validator.GetLoginDetails()
 	if err != nil {
 		log.Print(err)
-		if errors.Is(err, ErrLoginRouterUserNotFound) {
+		if errors.Is(err, ErrLoginRouterReadingFormData) {
 			writeGeneralError(w)
 		} else if errors.Is(err, ErrLoginRouterEmptyNamePassword) {
 			writeError(w, "Empty name or password")
@@ -37,8 +37,8 @@ func (l *LoginRouter) Handler(w http.ResponseWriter, r *http.Request) {
 	user, err := validator.GetUser(loginDetails)
 	if err != nil {
 		log.Print(err)
-		if errors.Is(err, ErrLoginRouterReadingFormData) {
-			writeError(w, "User not found")
+		if errors.Is(err, ErrLoginRouterUserNotFound) {
+			writeError(w, "User doesn't exist")
 		} else if errors.Is(err, ErrLoginRouterPasswordNotValid) {
 			writeError(w, "Password not valid")
 		}
@@ -113,7 +113,7 @@ func (v *LoginRouterValidator) GetLoginDetails() (*LoginDetails, error) {
 func (v *LoginRouterValidator) GetUser(loginDetails *LoginDetails) (*user.User, error) {
 	u, err := v.services.UserService.GetRepository().GetByName(loginDetails.Name)
 	if err == user.ErrUserNotFound {
-		return nil, fmt.Errorf("%w, %s", ErrLoginRouterUserNotFound, err)
+		return nil, ErrLoginRouterUserNotFound
 	}
 
 	if isPasswordValid := v.services.UserService.IsPasswordValid(loginDetails.Name, loginDetails.Password); !isPasswordValid {
@@ -142,9 +142,9 @@ func (v *LoginRouterValidator) GetDeviceData() session.DeviceData {
 }
 
 func writeSuccessLogin(w http.ResponseWriter, tokens *JwtTokens) {
-	w.WriteHeader(http.StatusOK)
-	accessCookie := &http.Cookie{Name: "accessToken", Value: tokens.accessToken, HttpOnly: true}
-	refreshCookie := &http.Cookie{Name: "refreshToken", Value: tokens.refreshToken, HttpOnly: true}
+	accessCookie := &http.Cookie{Name: "accessToken", Value: tokens.accessToken, HttpOnly: true, Path: "/"}
+	refreshCookie := &http.Cookie{Name: "refreshToken", Value: tokens.refreshToken, HttpOnly: true, Path: "/"}
 	http.SetCookie(w, accessCookie)
 	http.SetCookie(w, refreshCookie)
+	w.WriteHeader(http.StatusOK)
 }

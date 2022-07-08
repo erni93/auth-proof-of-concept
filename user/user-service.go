@@ -40,13 +40,13 @@ func (s *UserService) IsPasswordValid(name string, password string) bool {
 	return true
 }
 
-func (s *UserService) CreateUser(name string, password string) error {
+func (s *UserService) CreateUser(name string, password string, isAdmin bool) error {
 	id := uuid.New()
 	passwordHash, err := s.getPasswordHash(password)
 	if err != nil {
 		return err
 	}
-	err = s.repository.Add(&User{Id: id.String(), Name: name, Password: passwordHash})
+	err = s.repository.Add(&User{Id: id.String(), Name: name, Password: passwordHash, IsAdmin: isAdmin})
 	if err != nil {
 		return err
 	}

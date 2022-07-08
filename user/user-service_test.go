@@ -24,13 +24,13 @@ func (spv MockPasswordValidator) generateFromPassword(password []byte, cost int)
 
 func createTestUserService() (*UserService, error) {
 	users := []*User{
-		{Id: "1", Name: "test1", Password: "test1"},
-		{Id: "2", Name: "test2", Password: "test2"},
-		{Id: "3", Name: "test3", Password: "test3"},
+		{Id: "1", Name: "test1", Password: "test1", IsAdmin: true},
+		{Id: "2", Name: "test2", Password: "test2", IsAdmin: false},
+		{Id: "3", Name: "test3", Password: "test3", IsAdmin: false},
 	}
 	service := NewUserService()
 	for _, user := range users {
-		err := service.CreateUser(user.Name, user.Password)
+		err := service.CreateUser(user.Name, user.Password, user.IsAdmin)
 		if err != nil {
 			return nil, err
 		}
@@ -45,9 +45,22 @@ func TestCreateUser(t *testing.T) {
 		t.Errorf("error creating UserService, %s", err)
 	}
 	t.Run("Create user with the same name", func(t *testing.T) {
-		err := s.CreateUser("test1", "test1")
+		err := s.CreateUser("test1", "test1", true)
 		if err != ErrUserAlreadyRegistered {
 			t.Errorf("expected error to be ErrUserAlreadyRegistered, got: %s", err)
+		}
+	})
+	t.Run("Assign isAdmin to the new user", func(t *testing.T) {
+		err := s.CreateUser("admin", "admin", true)
+		if err != nil {
+			t.Errorf("expected error to be nil, got: %s", err)
+		}
+		user, err := s.GetRepository().GetByName("admin")
+		if err != nil {
+			t.Errorf("expected error to be nil, got: %s", err)
+		}
+		if user.IsAdmin != true {
+			t.Error("expected IsAdmin to be true, got")
 		}
 	})
 	t.Run("Error hashing user password", func(t *testing.T) {
@@ -56,7 +69,7 @@ func TestCreateUser(t *testing.T) {
 			ErrorToReturn: hashError,
 		}
 		s.passwordValidator = mockPasswordValidator
-		err := s.CreateUser("test4", "test4")
+		err := s.CreateUser("test4", "test4", true)
 		if err != hashError {
 			t.Errorf("expected error to be %s", hashError)
 		}
