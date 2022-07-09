@@ -34,9 +34,25 @@ func (t *TokenGenerator[T]) CreateToken(payload *T) (string, error) {
 	return t.createJWT(header, payloadJson), nil
 }
 
-func (t *TokenGenerator[T]) IsTokenValid(jwt string) (bool, error) {
+func (t *TokenGenerator[T]) IsTokenValid(jwt string) error {
 	expirationDate := time.Now().Add(-t.Duration)
 	return t.validateJWT(jwt, expirationDate)
+}
+
+func (t *TokenGenerator[T]) LoadPayload(jwt string, payload *T) error {
+	jwtParts, err := extractJWTParts(jwt)
+	if err != nil {
+		return err
+	}
+	payloadJson, err := b64.RawURLEncoding.DecodeString(jwtParts[1])
+	if err != nil {
+		return err
+	}
+	err = json.Unmarshal([]byte(payloadJson), payload)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (t *TokenGenerator[T]) createJWT(header []byte, payload []byte) string {
@@ -53,26 +69,34 @@ func (t *TokenGenerator[T]) createSignature(headerB64 string, payloadB64 string)
 	return b64.RawURLEncoding.EncodeToString(h.Sum(nil))
 }
 
-func (t *TokenGenerator[T]) validateJWT(jwt string, expirationDate time.Time) (bool, error) {
-	jwtParts := strings.Split(jwt, ".")
-	if len(jwtParts) != 3 {
-		return false, fmt.Errorf("%w, len %d", ErrInvalidJWTLength, len(jwtParts))
+func (t *TokenGenerator[T]) validateJWT(jwt string, expirationDate time.Time) error {
+	jwtParts, err := extractJWTParts(jwt)
+	if err != nil {
+		return err
 	}
 
-	if err := t.validateIssuedAtTime(jwt, expirationDate); err != nil {
-		return false, err
+	if err := validateIssuedAtTime(jwtParts[1], expirationDate); err != nil {
+		return err
 	}
 
 	signatureB64 := t.createSignature(jwtParts[0], jwtParts[1])
 	if signatureB64 != jwtParts[2] {
-		return false, fmt.Errorf("%w, got %s want %s", ErrInvalidSignature, jwtParts[2], signatureB64)
+		return fmt.Errorf("%w, got %s want %s", ErrInvalidSignature, jwtParts[2], signatureB64)
 	}
-	return true, nil
+	return nil
 }
 
-func (t *TokenGenerator[T]) validateIssuedAtTime(jwt string, expirationDate time.Time) error {
+func extractJWTParts(jwt string) ([]string, error) {
+	jwtParts := strings.Split(jwt, ".")
+	if len(jwtParts) != 3 {
+		return nil, fmt.Errorf("%w, len %d", ErrInvalidJWTLength, len(jwtParts))
+	}
+	return jwtParts, nil
+}
+
+func validateIssuedAtTime(payloadJwt string, expirationDate time.Time) error {
 	var issuedAtTime IssuedAtTime
-	payloadJson, err := b64.RawURLEncoding.DecodeString(strings.Split(jwt, ".")[1])
+	payloadJson, err := b64.RawURLEncoding.DecodeString(payloadJwt)
 	if err != nil {
 		return err
 	}
