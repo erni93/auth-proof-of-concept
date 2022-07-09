@@ -5,6 +5,7 @@ import (
 	"authGo/session"
 	"authGo/token"
 	"authGo/user"
+	"authGo/validator"
 	"log"
 	"net/http"
 	"time"
@@ -18,7 +19,7 @@ func main() {
 	userService.CreateUser("admin", "admin", true)
 
 	loginRouter := &router.LoginRouter{
-		Services: &router.LoginRouterServices{
+		Services: &validator.LoginRouterServices{
 			UserService:           userService,
 			AccessTokenGenerator:  &token.TokenGenerator[token.AccessTokenPayload]{Password: []byte("accessKey"), Duration: time.Minute * 2},
 			RefreshTokenGenerator: &token.TokenGenerator[token.RefreshTokenPayload]{Password: []byte("refreshKey"), Duration: time.Hour * 24 * 365},
