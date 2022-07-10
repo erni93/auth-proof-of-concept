@@ -81,7 +81,7 @@ func (t *TokenGenerator[T]) validateJWT(jwt string, expirationDate time.Time) er
 
 	signatureB64 := t.createSignature(jwtParts[0], jwtParts[1])
 	if signatureB64 != jwtParts[2] {
-		return fmt.Errorf("%w, got %s want %s", ErrInvalidSignature, jwtParts[2], signatureB64)
+		return fmt.Errorf("%w, got %s", ErrInvalidSignature, jwtParts[2])
 	}
 	return nil
 }
