@@ -24,6 +24,7 @@ type LoginDetails struct {
 type JwtTokens struct {
 	AccessToken    string
 	RefreshToken   string
+	AccessPayload  token.AccessTokenPayload
 	RefreshPayload token.RefreshTokenPayload
 }
 
@@ -74,7 +75,7 @@ func (v *LoginRouterValidator) GetUser(loginDetails *LoginDetails) (*user.User, 
 	return u, nil
 }
 
-func (v *LoginRouterValidator) GetTokens(user *user.User) (*JwtTokens, error) {
+func (v *LoginRouterValidator) CreateTokens(user *user.User) (*JwtTokens, error) {
 	now := time.Now()
 	accessPayload := &token.AccessTokenPayload{UserId: user.Id, IssuedAtTime: now, IsAdmin: user.IsAdmin}
 	accessJWT, err := v.Services.AccessTokenGenerator.CreateToken(accessPayload)
@@ -86,7 +87,7 @@ func (v *LoginRouterValidator) GetTokens(user *user.User) (*JwtTokens, error) {
 	if err != nil {
 		return nil, ErrLoginRouterCreatingRefreshToken
 	}
-	return &JwtTokens{AccessToken: accessJWT, RefreshToken: refreshJWT, RefreshPayload: *refreshPayload}, nil
+	return &JwtTokens{AccessToken: accessJWT, RefreshToken: refreshJWT, AccessPayload: *accessPayload, RefreshPayload: *refreshPayload}, nil
 }
 
 func (v *LoginRouterValidator) GetDeviceData() session.DeviceData {

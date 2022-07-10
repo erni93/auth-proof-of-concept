@@ -6,7 +6,6 @@ import (
 	"errors"
 	"log"
 	"net/http"
-	"time"
 )
 
 type LoginRouter struct {
@@ -39,23 +38,14 @@ func (l *LoginRouter) Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tokens, err := v.GetTokens(user)
+	tokens, err := v.CreateTokens(user)
 	if err != nil {
 		log.Print(err)
 		writeGeneralError(w)
 		return
 	}
 
-	newSession := &session.Session{UserToken: tokens.RefreshPayload, DeviceData: v.GetDeviceData(), Created: time.Now()}
-	l.SessionHandler.AddSession(newSession)
+	l.SessionHandler.AddNewSession(tokens.RefreshPayload, v.GetDeviceData())
 
-	writeSuccessLogin(w, tokens)
-}
-
-func writeSuccessLogin(w http.ResponseWriter, tokens *validator.JwtTokens) {
-	accessCookie := &http.Cookie{Name: "accessToken", Value: tokens.AccessToken, HttpOnly: true, Path: "/"}
-	refreshCookie := &http.Cookie{Name: "refreshToken", Value: tokens.RefreshToken, HttpOnly: true, Path: "/"}
-	http.SetCookie(w, accessCookie)
-	http.SetCookie(w, refreshCookie)
-	w.WriteHeader(http.StatusOK)
+	writeSuccessfulLogin(w, tokens)
 }
