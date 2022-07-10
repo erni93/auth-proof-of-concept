@@ -30,5 +30,6 @@ func (r *Repository[T]) Add(item *T) {
 func (r *Repository[T]) Delete(index int) {
 	lastIndex := len(r.items) - 1
 	r.items[index] = r.items[lastIndex]
+	r.items[lastIndex] = nil
 	r.items = r.items[:lastIndex]
 }
