@@ -2,31 +2,32 @@ package session
 
 import (
 	"authGo/token"
+	"reflect"
 	"testing"
 	"time"
 )
 
-func createTestSession(userId string) *Session {
-	return &Session{
-		UserToken: token.RefreshTokenPayload{
+func addTestSession(sessionHandler *SessionsHandler, userId string, issuedTime time.Time) error {
+	err := sessionHandler.AddNewSession(
+		token.RefreshTokenPayload{
 			UserId:       userId,
-			IssuedAtTime: time.Now(),
+			IssuedAtTime: issuedTime,
 		},
-		DeviceData: DeviceData{
+		DeviceData{
 			IpAddress: "ip-" + userId,
 			UserAgent: "userAgent-" + userId,
 		},
-		Created: time.Now(),
-	}
+	)
+	return err
 }
 
-func createTestSessionHandler(t *testing.T) *SessionsHandler {
+func createTestSessionHandler(t *testing.T, issuedTime time.Time) *SessionsHandler {
 	sessionHandler := NewSessionHandler()
-	err := sessionHandler.AddSession(createTestSession("user1"))
+	err := addTestSession(sessionHandler, "user1", issuedTime)
 	if err != nil {
 		t.Errorf("error adding session, %s", err)
 	}
-	err = sessionHandler.AddSession(createTestSession("user2"))
+	err = addTestSession(sessionHandler, "user2", issuedTime)
 	if err != nil {
 		t.Errorf("error adding session, %s", err)
 	}
@@ -39,8 +40,74 @@ func TestNewSessionHandler(t *testing.T) {
 	}
 }
 
+func TestGetSession(t *testing.T) {
+	now := time.Date(2022, 8, 6, 0, 0, 0, 0, time.UTC)
+	sessionHandler := createTestSessionHandler(t, now)
+	payload := token.RefreshTokenPayload{
+		UserId:       "user1",
+		IssuedAtTime: now,
+	}
+	session, id, err := sessionHandler.GetSession(payload)
+	if err != nil {
+		t.Errorf("expected err to be nil, got %s", err)
+	}
+	if session == nil {
+		t.Error("expected session to not be nil")
+	}
+	if id == -1 {
+		t.Error("expected session to not be -1")
+	}
+	if !reflect.DeepEqual(session.UserToken, payload) {
+		t.Errorf("wanted %v to be %v", session.UserToken, payload)
+	}
+
+	payload2 := token.RefreshTokenPayload{
+		UserId:       "user3",
+		IssuedAtTime: now,
+	}
+	session, id, err = sessionHandler.GetSession(payload2)
+	if err != ErrUserTokenNotFound {
+		t.Errorf("expected err to be ErrUserTokenNotFound, got %s", err)
+	}
+	if session != nil {
+		t.Error("expected session to be nil")
+	}
+	if id != -1 {
+		t.Error("expected session to be -1")
+	}
+}
+
+func TestGetSessionById(t *testing.T) {
+	now := time.Date(2022, 8, 6, 0, 0, 0, 0, time.UTC)
+	sessionHandler := createTestSessionHandler(t, now)
+	sessionId := sessionHandler.sessions[0].Id
+	session, err := sessionHandler.GetSessionById(sessionId)
+	if err != nil {
+		t.Errorf("expected err to be nil, got %s", err)
+	}
+	if session == nil {
+		t.Error("expected session to not be nil")
+	}
+	session, err = sessionHandler.GetSessionById("12345678")
+	if err != ErrUserTokenNotFound {
+		t.Errorf("expected err to be ErrUserTokenNotFound, got %s", err)
+	}
+	if session != nil {
+		t.Error("expected session to be nil")
+	}
+}
+
+func TestAddNewSession(t *testing.T) {
+	now := time.Date(2022, 8, 6, 0, 0, 0, 0, time.UTC)
+	sessionHandler := createTestSessionHandler(t, now)
+	err := addTestSession(sessionHandler, "user1", now)
+	if err != ErrSessionAlreadyExists {
+		t.Errorf("expected error to be ErrSessionAlreadyExists, got: %s", err)
+	}
+}
+
 func TestGetUserSessions(t *testing.T) {
-	sessionHandler := createTestSessionHandler(t)
+	sessionHandler := createTestSessionHandler(t, time.Now())
 
 	user1Sessions := sessionHandler.GetUserSessions("user1")
 	if len(user1Sessions) != 1 {
@@ -48,39 +115,39 @@ func TestGetUserSessions(t *testing.T) {
 	}
 
 	time.Sleep(1 * time.Millisecond)
-	err := sessionHandler.AddSession(createTestSession("user1"))
+
+	err := addTestSession(sessionHandler, "user1", time.Now())
 	if err != nil {
 		t.Errorf("error adding session, %s", err)
 	}
+
 	user1Sessions = sessionHandler.GetUserSessions("user1")
 	if len(user1Sessions) != 2 {
 		t.Errorf("expected user1Sessions len to be 2, got %d", len(user1Sessions))
 	}
 }
 
-func TestAddSession(t *testing.T) {
-	sessionHandler := createTestSessionHandler(t)
-	err := sessionHandler.AddSession(createTestSession("user1"))
-	if err != ErrSessionAlreadyExists {
-		t.Errorf("expected error to be ErrSessionAlreadyExists, got: %s", err)
-	}
-}
-
 func TestDeleteSession(t *testing.T) {
-	sessionHandler := createTestSessionHandler(t)
+	sessionHandler := createTestSessionHandler(t, time.Now())
 
 	time.Sleep(1 * time.Millisecond)
-	newSession := createTestSession("user1")
-
-	err := sessionHandler.AddSession(newSession)
+	err := addTestSession(sessionHandler, "user1", time.Now())
 	if err != nil {
 		t.Errorf("error adding session, %s", err)
 	}
 
 	user1Sessions := sessionHandler.GetUserSessions("user1")
+	if len(user1Sessions) != 2 {
+		t.Errorf("expected user1Sessions len to be 2, got %d", len(user1Sessions))
+	}
+
 	err = sessionHandler.DeleteSession(user1Sessions[0].UserToken)
 	if err != nil {
 		t.Errorf("error deleting session, %s", err)
+	}
+	user1Sessions = sessionHandler.GetUserSessions("user1")
+	if len(user1Sessions) != 1 {
+		t.Errorf("expected user1Sessions len to be 1, got %d", len(user1Sessions))
 	}
 
 	err = sessionHandler.DeleteSession(token.RefreshTokenPayload{UserId: "user3", IssuedAtTime: time.Now()})
@@ -89,29 +156,16 @@ func TestDeleteSession(t *testing.T) {
 	}
 }
 
-func TestRenewUserToken(t *testing.T) {
-	sessionHandler := createTestSessionHandler(t)
-	time.Sleep(1 * time.Millisecond)
-	oldData := sessionHandler.GetUserSessions("user1")[0].UserToken
-	newData := token.RefreshTokenPayload{UserId: "user1", IssuedAtTime: time.Now()}
-
-	err := sessionHandler.RenewUserToken(oldData, newData)
-	if err != nil {
-		t.Errorf("error renewing session, %s", err)
+func TestRefreshLastUpdate(t *testing.T) {
+	now := time.Date(2022, 8, 6, 0, 0, 0, 0, time.UTC)
+	sessionHandler := createTestSessionHandler(t, now)
+	payload := token.RefreshTokenPayload{
+		UserId:       "user1",
+		IssuedAtTime: now,
 	}
-	if sessionHandler.getSession(newData) == nil {
-		t.Errorf("new user token was not found, %s", newData)
-	}
-
-	time.Sleep(1 * time.Millisecond)
-	err = sessionHandler.RenewUserToken(newData, token.RefreshTokenPayload{UserId: "user3", IssuedAtTime: time.Now()})
-	if err != ErrRenewUserTokenDifferent {
-		t.Errorf("expected error to be ErrRenewUserTokenDifferent, got: %s", err)
-	}
-
-	time.Sleep(1 * time.Millisecond)
-	err = sessionHandler.RenewUserToken(token.RefreshTokenPayload{UserId: "user3", IssuedAtTime: time.Now()}, newData)
-	if err != ErrUserTokenNotFound {
-		t.Errorf("expected error to be ErrUserTokenNotFound, got: %s", err)
+	session, _, _ := sessionHandler.GetSession(payload)
+	sessionHandler.RefreshLastUpdate(session)
+	if session.LastUpdate == now {
+		t.Error("LastUpdate was not updated correctly")
 	}
 }
