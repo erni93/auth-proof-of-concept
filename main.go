@@ -22,22 +22,19 @@ func main() {
 	refreshTokenGenerator := &token.TokenGenerator[token.RefreshTokenPayload]{Password: []byte("refreshKey"), Duration: time.Hour * 24 * 365}
 	sessionHandler := session.NewSessionHandler()
 
+	services := &validator.Services{
+		UserService:           userService,
+		AccessTokenGenerator:  accessTokenGenerator,
+		RefreshTokenGenerator: refreshTokenGenerator,
+		SessionsHandler:       sessionHandler,
+	}
+
 	loginRouter := &router.LoginRouter{
-		Services: &validator.LoginRouterServices{
-			UserService:           userService,
-			AccessTokenGenerator:  accessTokenGenerator,
-			RefreshTokenGenerator: refreshTokenGenerator,
-		},
-		SessionHandler: sessionHandler,
+		Services: services,
 	}
 
 	refreshRouter := &router.RefreshRouter{
-		Services: &validator.RefreshRouterServices{
-			UserService:           userService,
-			AccessTokenGenerator:  accessTokenGenerator,
-			RefreshTokenGenerator: refreshTokenGenerator,
-			SessionsHandler:       sessionHandler,
-		},
+		Services: services,
 	}
 
 	router := mux.NewRouter()

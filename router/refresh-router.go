@@ -7,11 +7,11 @@ import (
 )
 
 type RefreshRouter struct {
-	Services *validator.RefreshRouterServices
+	Services *validator.Services
 }
 
 func (ref *RefreshRouter) Handler(w http.ResponseWriter, r *http.Request) {
-	v := validator.RefreshRouterValidator{Writer: w, Request: r, Services: ref.Services}
+	v := validator.RefreshValidator{Validator: validator.Validator{Writer: w, Request: r, Services: ref.Services}}
 
 	session, err := v.ValidateRefreshToken()
 	if err != nil {
@@ -20,7 +20,7 @@ func (ref *RefreshRouter) Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := v.Services.UserService.GetRepository().GetById(session.UserToken.UserId)
+	user, err := v.Validator.Services.UserService.GetRepository().GetById(session.UserToken.UserId)
 	if err != nil {
 		log.Print(err)
 		writeError(w, "User not valid")
@@ -33,7 +33,7 @@ func (ref *RefreshRouter) Handler(w http.ResponseWriter, r *http.Request) {
 		writeGeneralError(w)
 		return
 	}
-	v.Services.SessionsHandler.RefreshLastUpdate(session)
+	v.Validator.Services.SessionsHandler.RefreshLastUpdate(session)
 
 	writeSuccessfulRefresh(w, token)
 }

@@ -6,14 +6,11 @@ import (
 	"authGo/user"
 	"errors"
 	"fmt"
-	"net/http"
 	"time"
 )
 
-type LoginRouterValidator struct {
-	Writer   http.ResponseWriter
-	Request  *http.Request
-	Services *LoginRouterServices
+type LoginValidator struct {
+	Validator Validator
 }
 
 type LoginDetails struct {
@@ -28,28 +25,22 @@ type JwtTokens struct {
 	RefreshPayload token.RefreshTokenPayload
 }
 
-type LoginRouterServices struct {
-	UserService           *user.UserService
-	AccessTokenGenerator  *token.TokenGenerator[token.AccessTokenPayload]
-	RefreshTokenGenerator *token.TokenGenerator[token.RefreshTokenPayload]
-}
-
 var (
-	ErrLoginRouterReadingFormData      = errors.New("login router: error reading form data")
-	ErrLoginRouterEmptyNamePassword    = errors.New("login router: empty name or password")
-	ErrLoginRouterUserNotFound         = errors.New("login router: user not found")
-	ErrLoginRouterPasswordNotValid     = errors.New("login router: password not valid")
-	ErrLoginRouterCreatingAccessToken  = errors.New("login router: error creating accessToken")
-	ErrLoginRouterCreatingRefreshToken = errors.New("login router: error creating accessToken")
+	ErrLoginRouterReadingFormData      = errors.New("login validator: error reading form data")
+	ErrLoginRouterEmptyNamePassword    = errors.New("login validator: empty name or password")
+	ErrLoginRouterUserNotFound         = errors.New("login validator: user not found")
+	ErrLoginRouterPasswordNotValid     = errors.New("login validator: password not valid")
+	ErrLoginRouterCreatingAccessToken  = errors.New("login validator: error creating accessToken")
+	ErrLoginRouterCreatingRefreshToken = errors.New("login validator: error creating accessToken")
 )
 
-func (v *LoginRouterValidator) GetLoginDetails() (*LoginDetails, error) {
-	err := v.Request.ParseForm()
+func (v *LoginValidator) GetLoginDetails() (*LoginDetails, error) {
+	err := v.Validator.Request.ParseForm()
 	if err != nil {
 		return nil, fmt.Errorf("%w, %s", ErrLoginRouterReadingFormData, err)
 	}
 	var name, password string
-	for key, value := range v.Request.Form {
+	for key, value := range v.Validator.Request.Form {
 		switch key {
 		case "name":
 			name = value[0]
@@ -63,33 +54,33 @@ func (v *LoginRouterValidator) GetLoginDetails() (*LoginDetails, error) {
 	return &LoginDetails{Name: name, Password: password}, nil
 }
 
-func (v *LoginRouterValidator) GetUser(loginDetails *LoginDetails) (*user.User, error) {
-	u, err := v.Services.UserService.GetRepository().GetByName(loginDetails.Name)
+func (v *LoginValidator) GetUser(loginDetails *LoginDetails) (*user.User, error) {
+	u, err := v.Validator.Services.UserService.GetRepository().GetByName(loginDetails.Name)
 	if err == user.ErrUserNotFound {
 		return nil, ErrLoginRouterUserNotFound
 	}
 
-	if isPasswordValid := v.Services.UserService.IsPasswordValid(loginDetails.Name, loginDetails.Password); !isPasswordValid {
+	if isPasswordValid := v.Validator.Services.UserService.IsPasswordValid(loginDetails.Name, loginDetails.Password); !isPasswordValid {
 		return nil, ErrLoginRouterPasswordNotValid
 	}
 	return u, nil
 }
 
-func (v *LoginRouterValidator) CreateTokens(user *user.User) (*JwtTokens, error) {
+func (v *LoginValidator) CreateTokens(user *user.User) (*JwtTokens, error) {
 	now := time.Now()
 	accessPayload := &token.AccessTokenPayload{UserId: user.Id, IssuedAtTime: now, IsAdmin: user.IsAdmin}
-	accessJWT, err := v.Services.AccessTokenGenerator.CreateToken(accessPayload)
+	accessJWT, err := v.Validator.Services.AccessTokenGenerator.CreateToken(accessPayload)
 	if err != nil {
 		return nil, ErrLoginRouterCreatingAccessToken
 	}
 	refreshPayload := &token.RefreshTokenPayload{UserId: user.Id, IssuedAtTime: now}
-	refreshJWT, err := v.Services.RefreshTokenGenerator.CreateToken(refreshPayload)
+	refreshJWT, err := v.Validator.Services.RefreshTokenGenerator.CreateToken(refreshPayload)
 	if err != nil {
 		return nil, ErrLoginRouterCreatingRefreshToken
 	}
 	return &JwtTokens{AccessToken: accessJWT, RefreshToken: refreshJWT, AccessPayload: *accessPayload, RefreshPayload: *refreshPayload}, nil
 }
 
-func (v *LoginRouterValidator) GetDeviceData() session.DeviceData {
-	return session.DeviceData{IpAddress: v.Request.RemoteAddr, UserAgent: v.Request.UserAgent()}
+func (v *LoginValidator) GetDeviceData() session.DeviceData {
+	return session.DeviceData{IpAddress: v.Validator.Request.RemoteAddr, UserAgent: v.Validator.Request.UserAgent()}
 }

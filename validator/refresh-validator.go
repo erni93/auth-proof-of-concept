@@ -6,14 +6,11 @@ import (
 	"authGo/user"
 	"errors"
 	"fmt"
-	"net/http"
 	"time"
 )
 
-type RefreshRouterValidator struct {
-	Writer   http.ResponseWriter
-	Request  *http.Request
-	Services *RefreshRouterServices
+type RefreshValidator struct {
+	Validator Validator
 }
 
 type AccessJwtToken struct {
@@ -21,45 +18,38 @@ type AccessJwtToken struct {
 	AccessPayload token.AccessTokenPayload
 }
 
-type RefreshRouterServices struct {
-	UserService           *user.UserService
-	AccessTokenGenerator  *token.TokenGenerator[token.AccessTokenPayload]
-	RefreshTokenGenerator *token.TokenGenerator[token.RefreshTokenPayload]
-	SessionsHandler       *session.SessionsHandler
-}
-
 var (
-	ErrRefreshRouterCreatingAccessToken  = errors.New("refresh router: error creating accessToken")
-	ErrRefreshRouterReadingRefreshCookie = errors.New("refresh router: error reading refreshToken cookie")
+	ErrRefreshCreatingAccessToken  = errors.New("refresh validator: error creating accessToken")
+	ErrRefreshReadingRefreshCookie = errors.New("refresh validator: error reading refreshToken cookie")
 )
 
-func (v *RefreshRouterValidator) ValidateRefreshToken() (*session.Session, error) {
-	refreshCookie, err := v.Request.Cookie("refreshToken")
+func (v *RefreshValidator) ValidateRefreshToken() (*session.Session, error) {
+	refreshCookie, err := v.Validator.Request.Cookie("refreshToken")
 	if err != nil {
-		return nil, fmt.Errorf("%w, %s", ErrRefreshRouterReadingRefreshCookie, err)
+		return nil, fmt.Errorf("%w, %s", ErrRefreshReadingRefreshCookie, err)
 	}
-	err = v.Services.RefreshTokenGenerator.IsTokenValid(refreshCookie.Value)
+	err = v.Validator.Services.RefreshTokenGenerator.IsTokenValid(refreshCookie.Value)
 	if err != nil {
 		return nil, err
 	}
 	payload := token.RefreshTokenPayload{}
-	err = v.Services.RefreshTokenGenerator.LoadPayload(refreshCookie.Value, &payload)
+	err = v.Validator.Services.RefreshTokenGenerator.LoadPayload(refreshCookie.Value, &payload)
 	if err != nil {
 		return nil, err
 	}
-	session, _, err := v.Services.SessionsHandler.GetSession(payload)
+	session, _, err := v.Validator.Services.SessionsHandler.GetSession(payload)
 	if err != nil {
 		return nil, err
 	}
 	return session, nil
 }
 
-func (v *RefreshRouterValidator) CreateAccessToken(user *user.User) (*AccessJwtToken, error) {
+func (v *RefreshValidator) CreateAccessToken(user *user.User) (*AccessJwtToken, error) {
 	now := time.Now()
 	accessPayload := &token.AccessTokenPayload{UserId: user.Id, IssuedAtTime: now, IsAdmin: user.IsAdmin}
-	accessJWT, err := v.Services.AccessTokenGenerator.CreateToken(accessPayload)
+	accessJWT, err := v.Validator.Services.AccessTokenGenerator.CreateToken(accessPayload)
 	if err != nil {
-		return nil, ErrRefreshRouterCreatingAccessToken
+		return nil, ErrRefreshCreatingAccessToken
 	}
 	return &AccessJwtToken{AccessToken: accessJWT, AccessPayload: *accessPayload}, nil
 }

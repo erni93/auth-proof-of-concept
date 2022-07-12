@@ -1,7 +1,6 @@
 package router
 
 import (
-	"authGo/session"
 	"authGo/validator"
 	"errors"
 	"log"
@@ -9,12 +8,11 @@ import (
 )
 
 type LoginRouter struct {
-	Services       *validator.LoginRouterServices
-	SessionHandler *session.SessionsHandler
+	Services *validator.Services
 }
 
 func (l *LoginRouter) Handler(w http.ResponseWriter, r *http.Request) {
-	v := validator.LoginRouterValidator{Writer: w, Request: r, Services: l.Services}
+	v := validator.LoginValidator{Validator: validator.Validator{Writer: w, Request: r, Services: l.Services}}
 
 	loginDetails, err := v.GetLoginDetails()
 	if err != nil {
@@ -45,7 +43,7 @@ func (l *LoginRouter) Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	l.SessionHandler.AddNewSession(tokens.RefreshPayload, v.GetDeviceData())
+	l.Services.SessionsHandler.AddNewSession(tokens.RefreshPayload, v.GetDeviceData())
 
 	writeSuccessfulLogin(w, tokens)
 }
