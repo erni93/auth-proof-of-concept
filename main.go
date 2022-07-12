@@ -28,18 +28,20 @@ func main() {
 		RefreshTokenGenerator: refreshTokenGenerator,
 		SessionsHandler:       sessionHandler,
 	}
-
 	loginRouter := &router.LoginRouter{
 		Services: services,
 	}
-
 	refreshRouter := &router.RefreshRouter{
+		Services: services,
+	}
+	userRouter := &router.UserRouter{
 		Services: services,
 	}
 
 	router := mux.NewRouter()
 	router.HandleFunc("/auth/login", loginRouter.Handler).Methods("POST")
 	router.HandleFunc("/auth/refresh", refreshRouter.Handler).Methods("POST")
+	router.HandleFunc("/users", userRouter.GetUsersHandler).Methods("GET")
 	http.Handle("/", router)
 	log.Printf("Application listening on port %s", port)
 	log.Fatal(http.ListenAndServe(port, router))

@@ -20,3 +20,7 @@ func writeGeneralError(w http.ResponseWriter) {
 	w.WriteHeader(http.StatusBadRequest)
 	json.NewEncoder(w).Encode(ErrorResponse{Error: "Something went wrong. Please try again later"})
 }
+
+func writeTokenError(w http.ResponseWriter) {
+	w.WriteHeader(http.StatusUnauthorized)
+}
