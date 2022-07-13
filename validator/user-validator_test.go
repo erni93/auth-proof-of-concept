@@ -22,7 +22,7 @@ func TestGetNewUser(t *testing.T) {
 	v := UserValidator{Validator: Validator{Request: req}}
 	user, err := v.GetNewUser()
 	if err != nil {
-		t.Error("expected err to be nil")
+		t.Errorf("expected err to be nil, got %s", err)
 	}
 	if user == nil {
 		t.Error("expected user to not be nil")
