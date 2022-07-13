@@ -37,6 +37,9 @@ func main() {
 	userRouter := &router.UserRouter{
 		Services: services,
 	}
+	sessionRouter := &router.SessionRouter{
+		Services: services,
+	}
 
 	router := mux.NewRouter()
 	router.HandleFunc("/auth/login", loginRouter.Handler).Methods("POST")
@@ -44,6 +47,7 @@ func main() {
 	router.HandleFunc("/users", userRouter.GetUsersHandler).Methods("GET")
 	router.HandleFunc("/users", userRouter.NewUserHandler).Methods("POST")
 	router.HandleFunc("/users/{id}", userRouter.DeleteUserHandler).Methods("DELETE")
+	router.HandleFunc("/sessions", sessionRouter.GetSessionsHandler).Methods("GET")
 	http.Handle("/", router)
 	log.Printf("Application listening on port %s", port)
 	log.Fatal(http.ListenAndServe(port, router))

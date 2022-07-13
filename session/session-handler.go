@@ -41,6 +41,10 @@ func (s *SessionsHandler) GetSessionById(id string) (*Session, error) {
 	return nil, ErrUserTokenNotFound
 }
 
+func (s *SessionsHandler) GetAllSessions() []*Session {
+	return s.sessions
+}
+
 func (s *SessionsHandler) AddNewSession(userToken token.RefreshTokenPayload, deviceData DeviceData) error {
 	if _, i, _ := s.GetSession(userToken); i != -1 {
 		return ErrSessionAlreadyExists

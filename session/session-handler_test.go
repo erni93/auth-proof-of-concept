@@ -169,3 +169,12 @@ func TestRefreshLastUpdate(t *testing.T) {
 		t.Error("LastUpdate was not updated correctly")
 	}
 }
+
+func TestAllSessions(t *testing.T) {
+	sessionHandler := createTestSessionHandler(t, time.Now())
+
+	sessions := sessionHandler.GetAllSessions()
+	if !reflect.DeepEqual(sessions, sessionHandler.sessions) {
+		t.Errorf("expected %v to be %v", sessions, sessionHandler.sessions)
+	}
+}
