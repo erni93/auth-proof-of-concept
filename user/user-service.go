@@ -1,6 +1,8 @@
 package user
 
 import (
+	"strings"
+
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -41,12 +43,12 @@ func (s *UserService) IsPasswordValid(name string, password string) bool {
 }
 
 func (s *UserService) CreateUser(name string, password string, isAdmin bool) error {
-	id := uuid.New()
+	id := strings.ReplaceAll(uuid.NewString(), "-", "")
 	passwordHash, err := s.getPasswordHash(password)
 	if err != nil {
 		return err
 	}
-	err = s.repository.Add(&User{Id: id.String(), Name: name, Password: passwordHash, IsAdmin: isAdmin})
+	err = s.repository.Add(&User{Id: id, Name: name, Password: passwordHash, IsAdmin: isAdmin})
 	if err != nil {
 		return err
 	}

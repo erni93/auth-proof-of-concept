@@ -3,6 +3,7 @@ package session
 import (
 	"authGo/token"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -44,8 +45,9 @@ func (s *SessionsHandler) AddNewSession(userToken token.RefreshTokenPayload, dev
 	if _, i, _ := s.GetSession(userToken); i != -1 {
 		return ErrSessionAlreadyExists
 	}
+	id := strings.ReplaceAll(uuid.NewString(), "-", "")
 	s.sessions = append(s.sessions, &Session{
-		Id: uuid.New().String(), UserToken: userToken, DeviceData: deviceData, LastUpdate: userToken.IssuedAtTime,
+		Id: id, UserToken: userToken, DeviceData: deviceData, LastUpdate: userToken.IssuedAtTime,
 	})
 	return nil
 }
