@@ -1,6 +1,7 @@
 package router
 
 import (
+	response "authGo/router/response"
 	"authGo/validator"
 	"log"
 	"net/http"
@@ -16,24 +17,24 @@ func (ref *RefreshRouter) Handler(w http.ResponseWriter, r *http.Request) {
 	session, err := v.ValidateRefreshToken()
 	if err != nil {
 		log.Print(err)
-		writeError(w, "User session not found")
+		response.WriteError(w, "User session not found")
 		return
 	}
 
 	user, err := v.Validator.Services.UserService.GetRepository().GetById(session.UserToken.UserId)
 	if err != nil {
 		log.Print(err)
-		writeError(w, "User not valid")
+		response.WriteError(w, "User not valid")
 		return
 	}
 
 	token, err := v.CreateAccessToken(user)
 	if err != nil {
 		log.Print(err)
-		writeGeneralError(w)
+		response.WriteGeneralError(w)
 		return
 	}
 	v.Validator.Services.SessionsHandler.RefreshLastUpdate(session)
 
-	writeSuccessfulRefresh(w, token)
+	response.WriteSuccessfulRefresh(w, token)
 }

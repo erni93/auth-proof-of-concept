@@ -11,7 +11,7 @@ type AuthResponse struct {
 	UserData token.AccessTokenPayload `json:"userData"`
 }
 
-func writeSuccessfulLogin(w http.ResponseWriter, tokens *validator.JwtTokens) {
+func WriteSuccessfulLogin(w http.ResponseWriter, tokens *validator.JwtTokens) {
 	accessCookie := &http.Cookie{Name: "accessToken", Value: tokens.AccessToken, HttpOnly: true, Path: "/"}
 	refreshCookie := &http.Cookie{Name: "refreshToken", Value: tokens.RefreshToken, HttpOnly: true, Path: "/"}
 	http.SetCookie(w, accessCookie)
@@ -19,7 +19,7 @@ func writeSuccessfulLogin(w http.ResponseWriter, tokens *validator.JwtTokens) {
 	json.NewEncoder(w).Encode(AuthResponse{UserData: tokens.AccessPayload})
 }
 
-func writeSuccessfulRefresh(w http.ResponseWriter, token *validator.AccessJwtToken) {
+func WriteSuccessfulRefresh(w http.ResponseWriter, token *validator.AccessJwtToken) {
 	accessCookie := &http.Cookie{Name: "accessToken", Value: token.AccessToken, HttpOnly: true, Path: "/"}
 	http.SetCookie(w, accessCookie)
 	json.NewEncoder(w).Encode(AuthResponse{UserData: token.AccessPayload})

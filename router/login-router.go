@@ -1,6 +1,7 @@
 package router
 
 import (
+	response "authGo/router/response"
 	"authGo/validator"
 	"errors"
 	"log"
@@ -18,9 +19,9 @@ func (l *LoginRouter) Handler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Print(err)
 		if errors.Is(err, validator.ErrLoginRouterReadingFormData) {
-			writeGeneralError(w)
+			response.WriteGeneralError(w)
 		} else if errors.Is(err, validator.ErrLoginRouterEmptyNamePassword) {
-			writeError(w, "Empty name or password")
+			response.WriteError(w, "Empty name or password")
 		}
 		return
 	}
@@ -29,9 +30,9 @@ func (l *LoginRouter) Handler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Print(err)
 		if errors.Is(err, validator.ErrLoginRouterUserNotFound) {
-			writeError(w, "User doesn't exist")
+			response.WriteError(w, "User doesn't exist")
 		} else if errors.Is(err, validator.ErrLoginRouterPasswordNotValid) {
-			writeError(w, "Password not valid")
+			response.WriteError(w, "Password not valid")
 		}
 		return
 	}
@@ -39,11 +40,11 @@ func (l *LoginRouter) Handler(w http.ResponseWriter, r *http.Request) {
 	tokens, err := v.CreateTokens(user)
 	if err != nil {
 		log.Print(err)
-		writeGeneralError(w)
+		response.WriteGeneralError(w)
 		return
 	}
 
 	l.Services.SessionsHandler.AddNewSession(tokens.RefreshPayload, v.GetDeviceData())
 
-	writeSuccessfulLogin(w, tokens)
+	response.WriteSuccessfulLogin(w, tokens)
 }
