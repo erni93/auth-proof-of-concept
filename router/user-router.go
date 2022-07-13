@@ -106,4 +106,6 @@ func (u *UserRouter) DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
 		response.WriteError(w, "There was an error deleting the user")
 		return
 	}
+
+	w.WriteHeader(http.StatusOK)
 }

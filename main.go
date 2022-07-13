@@ -48,6 +48,7 @@ func main() {
 	router.HandleFunc("/users", userRouter.NewUserHandler).Methods("POST")
 	router.HandleFunc("/users/{id}", userRouter.DeleteUserHandler).Methods("DELETE")
 	router.HandleFunc("/sessions", sessionRouter.GetSessionsHandler).Methods("GET")
+	router.HandleFunc("/sessions/{id}", sessionRouter.DeleteSessionHandler).Methods("DELETE")
 	http.Handle("/", router)
 	log.Printf("Application listening on port %s", port)
 	log.Fatal(http.ListenAndServe(port, router))
