@@ -18,11 +18,7 @@ func (l *LoginRouter) Handler(w http.ResponseWriter, r *http.Request) {
 	loginDetails, err := v.GetLoginDetails()
 	if err != nil {
 		log.Print(err)
-		if errors.Is(err, validator.ErrLoginRouterReadingFormData) {
-			response.WriteGeneralError(w)
-		} else if errors.Is(err, validator.ErrLoginRouterEmptyNamePassword) {
-			response.WriteError(w, "Empty name or password")
-		}
+		response.WriteError(w, "Empty name or password")
 		return
 	}
 

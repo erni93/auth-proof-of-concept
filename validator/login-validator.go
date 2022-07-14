@@ -5,7 +5,6 @@ import (
 	"authGo/token"
 	"authGo/user"
 	"errors"
-	"fmt"
 	"time"
 )
 
@@ -26,7 +25,6 @@ type JwtTokens struct {
 }
 
 var (
-	ErrLoginRouterReadingFormData      = errors.New("login validator: error reading form data")
 	ErrLoginRouterEmptyNamePassword    = errors.New("login validator: empty name or password")
 	ErrLoginRouterUserNotFound         = errors.New("login validator: user not found")
 	ErrLoginRouterPasswordNotValid     = errors.New("login validator: password not valid")
@@ -35,20 +33,8 @@ var (
 )
 
 func (v *LoginValidator) GetLoginDetails() (*LoginDetails, error) {
-	err := v.Validator.Request.ParseForm()
-	if err != nil {
-		return nil, fmt.Errorf("%w, %s", ErrLoginRouterReadingFormData, err)
-	}
-	var name, password string
-	for key, value := range v.Validator.Request.Form {
-		switch key {
-		case "name":
-			name = value[0]
-		case "password":
-			password = value[0]
-		}
-	}
-	if name == "" || password == "" {
+	name, password, ok := v.Validator.Request.BasicAuth()
+	if !ok || name == "" || password == "" {
 		return nil, ErrLoginRouterEmptyNamePassword
 	}
 	return &LoginDetails{Name: name, Password: password}, nil
