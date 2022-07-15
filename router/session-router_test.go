@@ -223,7 +223,7 @@ func TestDeleteSessionHandlerInvalidAccessToken(t *testing.T) {
 
 	if status := rr.Code; status != http.StatusUnauthorized {
 		t.Errorf("handler returned wrong status code: got %v want %v",
-			status, http.StatusBadRequest)
+			status, http.StatusUnauthorized)
 	}
 }
 
@@ -297,6 +297,6 @@ func TestDeleteSessionHandlerForbidden(t *testing.T) {
 	if status := rr.Code; status != http.StatusForbidden {
 		body := strings.TrimSpace(rr.Body.String())
 		t.Errorf("handler returned wrong status code: got %v want %v , body %s",
-			status, http.StatusOK, body)
+			status, http.StatusForbidden, body)
 	}
 }
