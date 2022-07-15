@@ -5,6 +5,7 @@ import (
 	"authGo/token"
 	"authGo/user"
 	"authGo/validator"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -12,7 +13,7 @@ import (
 	"time"
 )
 
-func createLoginRouter() *LoginRouter {
+func createRefreshRouter() *RefreshRouter {
 	userService := user.NewUserService()
 	userService.CreateUser("admin", "admin", true)
 	accessTokenGenerator := &token.TokenGenerator[token.AccessTokenPayload]{Password: []byte("accessKey"), Duration: time.Minute * 2}
@@ -26,19 +27,34 @@ func createLoginRouter() *LoginRouter {
 		SessionsHandler:       sessionHandler,
 	}
 
-	return &LoginRouter{
+	return &RefreshRouter{
 		Services: services,
 	}
 }
 
-func TestLoginRouterHandler(t *testing.T) {
-	req, err := http.NewRequest("POST", "/auth/login", nil)
+func TestRefreshRouterHandler(t *testing.T) {
+	req, err := http.NewRequest("POST", "/auth/refresh", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	req.SetBasicAuth("admin", "admin")
 
-	loginRouter := createLoginRouter()
+	loginRouter := createRefreshRouter()
+	payload := &token.RefreshTokenPayload{UserId: loginRouter.Services.UserService.GetRepository().GetAll()[0].Id, IssuedAtTime: time.Now()}
+	err = loginRouter.Services.SessionsHandler.AddNewSession(*payload, session.DeviceData{IpAddress: "10.0.0.1", UserAgent: "vscode"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	session := loginRouter.Services.SessionsHandler.GetAllSessions()[0]
+	lastSessionUpdate := session.LastUpdate
+	time.Sleep(1 * time.Millisecond)
+	refreshToken, err := loginRouter.Services.RefreshTokenGenerator.CreateToken(&session.UserToken)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	refreshCookie := &http.Cookie{Name: "refreshToken", Value: refreshToken, HttpOnly: true, Path: "/"}
+	req.Header.Set("Cookie", fmt.Sprintf("refreshToken=%s", refreshCookie.Value))
+
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(loginRouter.Handler)
 
@@ -50,40 +66,41 @@ func TestLoginRouterHandler(t *testing.T) {
 	}
 
 	cookies := rr.Header().Values("Set-Cookie")
-	var hasAccessCookie, hasRefreshCookie bool
+	var hasAccessCookie bool
 	for _, cookie := range cookies {
 		if strings.Contains(cookie, "accessToken") {
 			hasAccessCookie = true
 		}
-		if strings.Contains(cookie, "refreshToken") {
-			hasRefreshCookie = true
-		}
 	}
 	if !hasAccessCookie {
 		t.Errorf("accessToken cookie not found, got %s", cookies)
-	}
-	if !hasRefreshCookie {
-		t.Errorf("refreshToken cookie not found, got %s", cookies)
-	}
-
-	sessions := loginRouter.Services.SessionsHandler.GetAllSessions()
-	if len(sessions) != 1 {
-		t.Errorf("expected sessions len to be 1, got %v", sessions)
 	}
 
 	expected := `userData`
 	if want := strings.TrimSpace(rr.Body.String()); !strings.Contains(want, expected) {
 		t.Errorf("handler returned unexpected body: got %v should contain %v", want, expected)
 	}
+
+	if session.LastUpdate == lastSessionUpdate {
+		t.Error("session LastUpdate was not updated")
+	}
 }
 
-func TestHandlerEmptyLogin(t *testing.T) {
-	req, err := http.NewRequest("POST", "/auth/login", nil)
+func TestRefreshRouterSessionNotFound(t *testing.T) {
+	req, err := http.NewRequest("POST", "/auth/refresh", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	loginRouter := createLoginRouter()
+	loginRouter := createRefreshRouter()
+	refreshToken, err := loginRouter.Services.RefreshTokenGenerator.CreateToken(&token.RefreshTokenPayload{UserId: "12345", IssuedAtTime: time.Now()})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	refreshCookie := &http.Cookie{Name: "refreshToken", Value: refreshToken, HttpOnly: true, Path: "/"}
+	req.Header.Set("Cookie", fmt.Sprintf("refreshToken=%s", refreshCookie.Value))
+
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(loginRouter.Handler)
 
@@ -94,20 +111,33 @@ func TestHandlerEmptyLogin(t *testing.T) {
 			status, http.StatusBadRequest)
 	}
 
-	expected := `{"error":"Empty name or password"}`
+	expected := `{"error":"User session not found"}`
 	if want := strings.TrimSpace(rr.Body.String()); want != expected {
 		t.Errorf("handler returned unexpected body: got %v want %v", want, expected)
 	}
 }
 
-func TestHandlerUserNotFound(t *testing.T) {
-	req, err := http.NewRequest("POST", "/auth/login", nil)
+func TestRefreshRouterUserNotValid(t *testing.T) {
+	req, err := http.NewRequest("POST", "/auth/refresh", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	req.SetBasicAuth("user123", "user123")
 
-	loginRouter := createLoginRouter()
+	loginRouter := createRefreshRouter()
+	payload := &token.RefreshTokenPayload{UserId: "12345", IssuedAtTime: time.Now()}
+	err = loginRouter.Services.SessionsHandler.AddNewSession(*payload, session.DeviceData{IpAddress: "10.0.0.1", UserAgent: "vscode"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	session := loginRouter.Services.SessionsHandler.GetAllSessions()[0]
+	refreshToken, err := loginRouter.Services.RefreshTokenGenerator.CreateToken(&session.UserToken)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	refreshCookie := &http.Cookie{Name: "refreshToken", Value: refreshToken, HttpOnly: true, Path: "/"}
+	req.Header.Set("Cookie", fmt.Sprintf("refreshToken=%s", refreshCookie.Value))
+
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(loginRouter.Handler)
 
@@ -118,31 +148,7 @@ func TestHandlerUserNotFound(t *testing.T) {
 			status, http.StatusBadRequest)
 	}
 
-	expected := `{"error":"User doesn't exist"}`
-	if want := strings.TrimSpace(rr.Body.String()); want != expected {
-		t.Errorf("handler returned unexpected body: got %v want %v", want, expected)
-	}
-}
-
-func TestHandlerPasswordNotValid(t *testing.T) {
-	req, err := http.NewRequest("POST", "/auth/login", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	req.SetBasicAuth("admin", "12345")
-
-	loginRouter := createLoginRouter()
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(loginRouter.Handler)
-
-	handler.ServeHTTP(rr, req)
-
-	if status := rr.Code; status != http.StatusBadRequest {
-		t.Errorf("handler returned wrong status code: got %v want %v",
-			status, http.StatusBadRequest)
-	}
-
-	expected := `{"error":"Password not valid"}`
+	expected := `{"error":"User not valid"}`
 	if want := strings.TrimSpace(rr.Body.String()); want != expected {
 		t.Errorf("handler returned unexpected body: got %v want %v", want, expected)
 	}
