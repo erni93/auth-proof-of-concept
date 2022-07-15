@@ -15,6 +15,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/gorilla/mux"
 )
 
 func createUserRouter() *UserRouter {
@@ -279,6 +281,172 @@ func TestUserRouterNewUserHandlerErrorAddingUser(t *testing.T) {
 	}
 
 	expected := `{"error":"Error creating new user"}`
+	if want := strings.TrimSpace(rr.Body.String()); want != expected {
+		t.Errorf("handler returned unexpected body: got %v want %v", want, expected)
+	}
+}
+
+func TestDeleteUserHandler(t *testing.T) {
+	userRouter := createUserRouter()
+	adminUser, err := userRouter.Services.UserService.GetRepository().GetByName("admin")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	accessPayload := &token.AccessTokenPayload{UserId: adminUser.Id, IssuedAtTime: time.Now(), IsAdmin: adminUser.IsAdmin}
+	addSession(t, *userRouter.Services, adminUser)
+	accessToken, err := userRouter.Services.AccessTokenGenerator.CreateToken(accessPayload)
+	if err != nil {
+		t.Fatal(err)
+	}
+	normalUser := addUserAndSession(t, *userRouter.Services, "user2", "user2", false)
+
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("/users/%s", normalUser.Id), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	accessCookie := &http.Cookie{Name: "accessToken", Value: accessToken, HttpOnly: true, Path: "/"}
+	req.Header.Set("Cookie", fmt.Sprintf("accessToken=%s", accessCookie.Value))
+
+	rr := httptest.NewRecorder()
+	router := mux.NewRouter()
+	router.HandleFunc("/users/{id}", userRouter.DeleteUserHandler)
+	router.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusOK {
+		body := strings.TrimSpace(rr.Body.String())
+		t.Errorf("handler returned wrong status code: got %v want %v , body %s",
+			status, http.StatusOK, body)
+	}
+}
+
+func TestDeleteUserHandlerInvalidAccessToken(t *testing.T) {
+	req, err := http.NewRequest("DELETE", "/users/123", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	userRouter := createUserRouter()
+	accessCookie := &http.Cookie{Name: "accessToken", Value: "123.123.123", HttpOnly: true, Path: "/"}
+	req.Header.Set("Cookie", fmt.Sprintf("accessToken=%s", accessCookie.Value))
+
+	rr := httptest.NewRecorder()
+	router := mux.NewRouter()
+	router.HandleFunc("/users/{id}", userRouter.DeleteUserHandler)
+	router.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusUnauthorized {
+		t.Errorf("handler returned wrong status code: got %v want %v",
+			status, http.StatusUnauthorized)
+	}
+}
+
+func TestDeleteUserHandlerNotAdmin(t *testing.T) {
+	userRouter := createUserRouter()
+	adminUser, err := userRouter.Services.UserService.GetRepository().GetByName("admin")
+	if err != nil {
+		t.Fatal(err)
+	}
+	addSession(t, *userRouter.Services, adminUser)
+
+	normalUser := addUserAndSession(t, *userRouter.Services, "user2", "user2", false)
+	accessPayload := &token.AccessTokenPayload{UserId: normalUser.Id, IssuedAtTime: time.Now(), IsAdmin: normalUser.IsAdmin}
+	accessToken, err := userRouter.Services.AccessTokenGenerator.CreateToken(accessPayload)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("/users/%s", normalUser.Id), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	accessCookie := &http.Cookie{Name: "accessToken", Value: accessToken, HttpOnly: true, Path: "/"}
+	req.Header.Set("Cookie", fmt.Sprintf("accessToken=%s", accessCookie.Value))
+
+	rr := httptest.NewRecorder()
+	router := mux.NewRouter()
+	router.HandleFunc("/users/{id}", userRouter.DeleteUserHandler)
+	router.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusForbidden {
+		t.Errorf("handler returned wrong status code: got %v want %v",
+			status, http.StatusForbidden)
+	}
+}
+
+func TestDeleteUserHandlerInvalidId(t *testing.T) {
+	userRouter := createUserRouter()
+	adminUser, err := userRouter.Services.UserService.GetRepository().GetByName("admin")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	accessPayload := &token.AccessTokenPayload{UserId: adminUser.Id, IssuedAtTime: time.Now(), IsAdmin: adminUser.IsAdmin}
+	addSession(t, *userRouter.Services, adminUser)
+	accessToken, err := userRouter.Services.AccessTokenGenerator.CreateToken(accessPayload)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("/users/%s", "1234"), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	accessCookie := &http.Cookie{Name: "accessToken", Value: accessToken, HttpOnly: true, Path: "/"}
+	req.Header.Set("Cookie", fmt.Sprintf("accessToken=%s", accessCookie.Value))
+
+	rr := httptest.NewRecorder()
+	router := mux.NewRouter()
+	router.HandleFunc("/users/{id}", userRouter.DeleteUserHandler)
+	router.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusBadRequest {
+		t.Errorf("handler returned wrong status code: got %v want %v",
+			status, http.StatusBadRequest)
+	}
+
+	expected := `{"error":"User id not valid"}`
+	if want := strings.TrimSpace(rr.Body.String()); want != expected {
+		t.Errorf("handler returned unexpected body: got %v want %v", want, expected)
+	}
+}
+
+func TestDeleteUserHandlerDeleteHimself(t *testing.T) {
+	userRouter := createUserRouter()
+	adminUser, err := userRouter.Services.UserService.GetRepository().GetByName("admin")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	accessPayload := &token.AccessTokenPayload{UserId: adminUser.Id, IssuedAtTime: time.Now(), IsAdmin: adminUser.IsAdmin}
+	addSession(t, *userRouter.Services, adminUser)
+	accessToken, err := userRouter.Services.AccessTokenGenerator.CreateToken(accessPayload)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("/users/%s", adminUser.Id), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	accessCookie := &http.Cookie{Name: "accessToken", Value: accessToken, HttpOnly: true, Path: "/"}
+	req.Header.Set("Cookie", fmt.Sprintf("accessToken=%s", accessCookie.Value))
+
+	rr := httptest.NewRecorder()
+	router := mux.NewRouter()
+	router.HandleFunc("/users/{id}", userRouter.DeleteUserHandler)
+	router.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusBadRequest {
+		t.Errorf("handler returned wrong status code: got %v want %v",
+			status, http.StatusBadRequest)
+	}
+
+	expected := `{"error":"An user cannot remove himself"}`
 	if want := strings.TrimSpace(rr.Body.String()); want != expected {
 		t.Errorf("handler returned unexpected body: got %v want %v", want, expected)
 	}
