@@ -38,16 +38,16 @@ func TestRefreshRouterHandler(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	loginRouter := createRefreshRouter()
-	payload := &token.RefreshTokenPayload{UserId: loginRouter.Services.UserService.GetRepository().GetAll()[0].Id, IssuedAtTime: time.Now()}
-	err = loginRouter.Services.SessionsHandler.AddNewSession(*payload, session.DeviceData{IpAddress: "10.0.0.1", UserAgent: "vscode"})
+	refreshRouter := createRefreshRouter()
+	payload := &token.RefreshTokenPayload{UserId: refreshRouter.Services.UserService.GetRepository().GetAll()[0].Id, IssuedAtTime: time.Now()}
+	err = refreshRouter.Services.SessionsHandler.AddNewSession(*payload, session.DeviceData{IpAddress: "10.0.0.1", UserAgent: "vscode"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	session := loginRouter.Services.SessionsHandler.GetAllSessions()[0]
+	session := refreshRouter.Services.SessionsHandler.GetAllSessions()[0]
 	lastSessionUpdate := session.LastUpdate
 	time.Sleep(1 * time.Millisecond)
-	refreshToken, err := loginRouter.Services.RefreshTokenGenerator.CreateToken(&session.UserToken)
+	refreshToken, err := refreshRouter.Services.RefreshTokenGenerator.CreateToken(&session.UserToken)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,7 +56,7 @@ func TestRefreshRouterHandler(t *testing.T) {
 	req.Header.Set("Cookie", fmt.Sprintf("refreshToken=%s", refreshCookie.Value))
 
 	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(loginRouter.Handler)
+	handler := http.HandlerFunc(refreshRouter.Handler)
 
 	handler.ServeHTTP(rr, req)
 
@@ -92,8 +92,8 @@ func TestRefreshRouterSessionNotFound(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	loginRouter := createRefreshRouter()
-	refreshToken, err := loginRouter.Services.RefreshTokenGenerator.CreateToken(&token.RefreshTokenPayload{UserId: "12345", IssuedAtTime: time.Now()})
+	refreshRouter := createRefreshRouter()
+	refreshToken, err := refreshRouter.Services.RefreshTokenGenerator.CreateToken(&token.RefreshTokenPayload{UserId: "12345", IssuedAtTime: time.Now()})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -102,7 +102,7 @@ func TestRefreshRouterSessionNotFound(t *testing.T) {
 	req.Header.Set("Cookie", fmt.Sprintf("refreshToken=%s", refreshCookie.Value))
 
 	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(loginRouter.Handler)
+	handler := http.HandlerFunc(refreshRouter.Handler)
 
 	handler.ServeHTTP(rr, req)
 
@@ -123,14 +123,14 @@ func TestRefreshRouterUserNotValid(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	loginRouter := createRefreshRouter()
+	refreshRouter := createRefreshRouter()
 	payload := &token.RefreshTokenPayload{UserId: "12345", IssuedAtTime: time.Now()}
-	err = loginRouter.Services.SessionsHandler.AddNewSession(*payload, session.DeviceData{IpAddress: "10.0.0.1", UserAgent: "vscode"})
+	err = refreshRouter.Services.SessionsHandler.AddNewSession(*payload, session.DeviceData{IpAddress: "10.0.0.1", UserAgent: "vscode"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	session := loginRouter.Services.SessionsHandler.GetAllSessions()[0]
-	refreshToken, err := loginRouter.Services.RefreshTokenGenerator.CreateToken(&session.UserToken)
+	session := refreshRouter.Services.SessionsHandler.GetAllSessions()[0]
+	refreshToken, err := refreshRouter.Services.RefreshTokenGenerator.CreateToken(&session.UserToken)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -139,7 +139,7 @@ func TestRefreshRouterUserNotValid(t *testing.T) {
 	req.Header.Set("Cookie", fmt.Sprintf("refreshToken=%s", refreshCookie.Value))
 
 	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(loginRouter.Handler)
+	handler := http.HandlerFunc(refreshRouter.Handler)
 
 	handler.ServeHTTP(rr, req)
 
