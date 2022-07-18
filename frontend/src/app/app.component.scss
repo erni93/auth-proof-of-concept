@@ -1,0 +1,24 @@
+@import '~src/styles/variables.scss';
+
+.header {
+    background-image: linear-gradient(90deg, $black-content-color 0%, #003750 100%);
+    height: 35vh;
+    text-align: center;
+    >h1{
+        color: #fff;
+        display: inline-block;
+        font-size: 2.5em;
+        font-weight: 300;
+        padding: 0.5em 1em;
+    }
+}
+
+.logos {
+    display: flex;
+    justify-content: center;
+    >img{
+        max-width: 300px;
+        margin-right: 2em;
+        max-height: 100px;
+    }
+}
