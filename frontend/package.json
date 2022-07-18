@@ -8,8 +8,14 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "lint": "ng lint",
+    "prepare": "cd ../ && husky install frontend/.husky",
     "format": "pretty-quick --staged",
     "format-all": "prettier --write **/*.{ts,js,css,html}"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "pretty-quick --staged --check"
+    }
   },
   "private": true,
   "dependencies": {
@@ -55,10 +61,5 @@
     "prettier": "^2.7.1",
     "prettier-eslint": "^15.0.1",
     "typescript": "~4.7.2"
-  },
-  "husky": {
-    "hooks": {
-      "pre-commit": "pretty-quick --staged --check"
-    }
   }
 }
