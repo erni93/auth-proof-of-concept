@@ -10,12 +10,8 @@
     "lint": "ng lint",
     "prepare": "cd ../ && husky install frontend/.husky",
     "format": "pretty-quick --staged",
-    "format-all": "prettier --write **/*.{ts,js,css,html}"
-  },
-  "husky": {
-    "hooks": {
-      "pre-commit": "pretty-quick --staged --check"
-    }
+    "format-all": "prettier --write **/*.{ts,js,css,html}",
+    "precommit": "pretty-quick --staged --check"
   },
   "private": true,
   "dependencies": {
