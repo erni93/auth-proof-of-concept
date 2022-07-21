@@ -1,27 +1,14 @@
-<div class="panel">
-  <h1>
-    <fa-icon [icon]="faUserClock"></fa-icon>
-    Actual session
-  </h1>
-  <div class="content">
-    <p><span>Name:</span> user1</p>
-    <p><span>Admin:</span> yes</p>
-    <p><span>Last connection:</span> 5 min ago</p>
-    <p><span>Session created:</span> 20 days ago</p>
-    <p>
-      <button class="button">Logout</button>
-    </p>
-  </div>
-</div>
-<div class="panel">
-  <h1>
-    <fa-icon [icon]="faCompass"></fa-icon>
-    Navigation
-  </h1>
-  <div class="content">
-    <p>
-      <a routerLink="/users" class="button">Users</a>
-      <a href="#" class="button">Sessions</a>
-    </p>
-  </div>
-</div>
+<app-panel>
+  <ng-container header>
+    <fa-icon [icon]="faUserClock"></fa-icon>Actual session
+  </ng-container>
+  <p><span>Name:</span> user1</p>
+  <p><span>Admin:</span> yes</p>
+  <p><span>Last connection:</span> 5 min ago</p>
+  <p><span>Session created:</span> 20 days ago</p>
+  <p>
+    <button class="button">Logout</button>
+  </p>
+</app-panel>
+
+<app-navigation></app-navigation>

@@ -4,9 +4,10 @@ import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 
 import { HomeComponent } from './home/home.component';
 import { UsersComponent } from './users/users.component';
+import { ComponentsModule } from '../components/components.module';
 
 @NgModule({
-  imports: [CommonModule, FontAwesomeModule],
+  imports: [CommonModule, ComponentsModule, FontAwesomeModule],
   declarations: [HomeComponent, UsersComponent],
   exports: [HomeComponent, UsersComponent],
   providers: [],
