@@ -1,4 +1,5 @@
 #!/usr/bin/env sh
+# Created with npx husky add .husky/pre-commit "npm run precommit"
 . "$(dirname -- "$0")/_/husky.sh"
 cd frontend
 npm run precommit
