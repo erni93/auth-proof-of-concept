@@ -1,1 +1,51 @@
-<p>users works!</p>
+<app-panel>
+  <ng-container header>
+    <fa-icon [icon]="faUsers"></fa-icon>Users
+  </ng-container>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Id</th>
+        <th>Name</th>
+        <th>Admin</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td>5685833</td>
+        <td>user1</td>
+        <td>Yes</td>
+        <td><button class="button delete">Delete</button></td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td>1265724</td>
+        <td>user2</td>
+        <td>No</td>
+        <td><button class="button delete">Delete</button></td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td>21612461</td>
+        <td>user3</td>
+        <td>No</td>
+        <td><button class="button delete">Delete</button></td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td>3521361</td>
+        <td>user4</td>
+        <td>Yes</td>
+        <td><button class="button delete">Delete</button></td>
+      </tr>
+    </tbody>
+  </table>
+  <p>
+    <button class="button">Create new user</button>
+  </p>
+</app-panel>
+
+<app-navigation></app-navigation>

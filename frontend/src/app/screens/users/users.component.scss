@@ -1,0 +1,42 @@
+@import '~src/styles/variables.scss';
+
+$table-color: #e7e7e7;
+
+:host {
+  display: block;
+  margin: 2em 10vw;
+}
+
+fa-icon {
+  margin-right: 0.3em;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-top: 2em;
+  > thead,
+  tbody {
+    text-align: left;
+  }
+  > thead > tr > th {
+    border-top: 1px solid $table-color;
+    border-bottom: 1px solid $table-color;
+    background-color: $table-color;
+    padding-top: 1em;
+    padding-bottom: 1em;
+  }
+  > tbody > tr > td {
+    border-top: 1px solid $table-color;
+    padding-top: 1em;
+    padding-bottom: 1em;
+  }
+  th:first-child,
+  td:first-child {
+    font-weight: bolder;
+    padding-left: 1em;
+  }
+}
+.delete {
+  background-color: #f44336;
+}
