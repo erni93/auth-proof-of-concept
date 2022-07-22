@@ -3,7 +3,11 @@
     <fa-icon [icon]="faCompass"></fa-icon> Navigation
   </ng-container>
   <p>
-    <a routerLink="/users" class="button">Users</a>
-    <a href="#" class="button">Sessions</a>
+    <a
+      *ngFor="let route of activeRoutes"
+      [routerLink]="'/' + route"
+      class="button"
+      >{{ route }}
+    </a>
   </p>
 </app-panel>
