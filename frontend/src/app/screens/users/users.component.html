@@ -43,9 +43,23 @@
       </tr>
     </tbody>
   </table>
-  <p>
-    <button class="button">Create new user</button>
-  </p>
+  <h2>New user</h2>
+  <form [formGroup]="newUserForm" (ngSubmit)="onSubmit()">
+    <label for="name">Name</label>
+    <input type="text" formControlName="name" id="name" />
+    <label for="password">Password</label>
+    <input
+      type="password"
+      formControlName="password"
+      id="password"
+      autocomplete="on"
+    />
+    <label for="isAdmin">Is admin?</label>
+    <input type="checkbox" formControlName="isAdmin" id="isAdmin" />
+    <button class="button save" type="submit" [disabled]="!newUserForm.valid">
+      Save
+    </button>
+  </form>
 </app-panel>
 
 <app-navigation></app-navigation>

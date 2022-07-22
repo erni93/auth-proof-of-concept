@@ -40,3 +40,33 @@ table {
 .delete {
   background-color: #f44336;
 }
+
+.save {
+  background-color: #4caf50;
+}
+
+h2 {
+  margin-left: 0;
+  background-color: $primary-color;
+  color: #fff;
+  padding: 0.5em;
+  text-align: center;
+  font-weight: 400;
+}
+
+form {
+  display: flex;
+  align-items: center;
+  > input {
+    height: 26px;
+    margin-left: 0.5em;
+    margin-right: 3em;
+    font-size: 1em;
+  }
+  > label {
+    font-weight: bolder;
+  }
+  input[type='checkbox'] {
+    width: 26px;
+  }
+}
