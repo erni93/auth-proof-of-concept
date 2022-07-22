@@ -18,7 +18,6 @@ export class NavigationComponent {
   }
 
   private getNavigationRoutes(actualRoute: string): string[] {
-    console.log('route', actualRoute);
     return routes.reduce((acc, r) => {
       if (r.path && r.path !== actualRoute) {
         acc.push(r.path);
