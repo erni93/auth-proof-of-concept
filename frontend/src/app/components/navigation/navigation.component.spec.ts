@@ -14,7 +14,6 @@ describe('NavigationComponent', () => {
       providers: [{ provide: Router, useValue: router }],
     }).compileComponents();
 
-    console.log('routerrr', router);
     fixture = TestBed.createComponent(NavigationComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
