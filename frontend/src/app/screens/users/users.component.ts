@@ -5,7 +5,7 @@ import { faUsers } from '@fortawesome/free-solid-svg-icons';
 @Component({
   selector: 'app-users',
   templateUrl: './users.component.html',
-  styleUrls: ['./users.component.scss'],
+  styleUrls: ['../shared/screens-shared.scss', './users.component.scss'],
 })
 export class UsersComponent {
   public faUsers = faUsers;

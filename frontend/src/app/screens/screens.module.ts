@@ -6,6 +6,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { HomeComponent } from './home/home.component';
 import { UsersComponent } from './users/users.component';
 import { ComponentsModule } from '../components/components.module';
+import { SessionsComponent } from './sessions/sessions.component';
 
 @NgModule({
   imports: [
@@ -14,7 +15,7 @@ import { ComponentsModule } from '../components/components.module';
     FontAwesomeModule,
     ReactiveFormsModule,
   ],
-  declarations: [HomeComponent, UsersComponent],
+  declarations: [HomeComponent, UsersComponent, SessionsComponent],
   exports: [HomeComponent, UsersComponent],
   providers: [],
 })

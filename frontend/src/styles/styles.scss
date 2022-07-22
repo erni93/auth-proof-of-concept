@@ -29,3 +29,38 @@ button:disabled {
   cursor: not-allowed;
   color: #646464;
 }
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-top: 2em;
+  > thead,
+  tbody {
+    text-align: left;
+  }
+  > thead > tr > th {
+    border-top: 1px solid $table-color;
+    border-bottom: 1px solid $table-color;
+    background-color: $table-color;
+    padding-top: 1em;
+    padding-bottom: 1em;
+  }
+  > tbody > tr > td {
+    border-top: 1px solid $table-color;
+  }
+  th:first-child,
+  td:first-child {
+    font-weight: bolder;
+  }
+  th,
+  td {
+    padding: 1em;
+  }
+}
+.delete {
+  background-color: #f44336;
+}
+
+.save {
+  background-color: #4caf50;
+}
